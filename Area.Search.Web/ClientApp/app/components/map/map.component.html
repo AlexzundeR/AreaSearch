@@ -9,6 +9,7 @@
             <input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />
             <button (click)="onSearchClick($event)">Найти</button>
             <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
+            <div><button (click)="onShowOnMapClick($event)">Показать на карте</button></div>
             <dx-list #dataList
                      [indicateLoading]="true"
                      selectionMode="all"
@@ -36,9 +37,11 @@
                     [zoom]="10"
                     [height]="'100%'"
                     width="100%"
+                    [(markers)]="mapMarkers"
                     [controls]="true"
-                    [autoAdjust]="false"
-                    (onReady)="onMapReady($event)">
+                    [autoAdjust]="true"
+                    (onReady)="onMapReady($event)"
+                    (onMarkerAdded)="markerAdded($event)">
             </dx-map>
         </div>
     </div>

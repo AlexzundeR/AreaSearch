@@ -1,6 +1,6 @@
 ﻿import { Injectable } from "@angular/core";
 import { Observable } from "rxjs/Observable";
-import { MapData, MapDataPoint } from "../models/mapData.model";
+import { MapData, MapDataPoint } from "../models/map-data.model";
 import { toObservable } from "@angular/forms/src/validators";
 const allGeo = require('../static/all.json');
 import { } from '@types/googlemaps';

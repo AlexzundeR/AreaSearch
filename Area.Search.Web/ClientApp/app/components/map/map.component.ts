@@ -1,11 +1,12 @@
 import { Component, Input, ViewChild } from '@angular/core';
-import { MapData } from '../../models/mapData.model';
+import { MapData, MapDataPoint } from '../../models/map-data.model';
 import { } from '@types/googlemaps';
 import { MapService } from '../../services/map.service';
 import { DxListComponent } from 'devextreme-angular/ui/list';
 import { StateService } from '../../services/state.service';
 import { DxMapComponent } from 'devextreme-angular/ui/map';
 import { forEach } from '@angular/router/src/utils/collection';
+import { MapMarker } from '../../models/map-marker.type';
 
 
 
@@ -19,6 +20,7 @@ export class MapComponent {
     @Input() searchString: string = "";
     @Input() typeString: string = "";
     @Input() ignoreTypeString: string = "";
+    mapMarkers: MapMarker[] = [];
 
     defaultCenter = [55.7558, 37.6173];
     @Input() useMapBounds: boolean = true;
@@ -52,7 +54,7 @@ export class MapComponent {
                 this.useMapBounds = state.useBoundaries;
             }
             if (state.selectedMapData) {
-                this.selectedMapData = state.selectedMapData.map((e:any)=>this.mapData.find(d=>d.id==e.id));
+                this.selectedMapData = state.selectedMapData.map((e: any) => this.mapData.find(d => d.id == e.id));
             }
         }
     }
@@ -80,7 +82,46 @@ export class MapComponent {
     }
 
     selectedMapDataChanged(e: any) {
+        (e.addedItems as MapData[]).forEach(e => {
+            this.selectedMapData.push(e);
+        });
+        this.selectedMapData = this.selectedMapData.filter(d => !(e.removedItems as MapData[]).some(p => p == d));
         this.updateState();
+    }
+
+    onShowOnMapClick() {
+        var points = new Array<{ d: MapData, p: MapDataPoint, point: number[] }>();
+        this.mapMarkers.forEach((sm: MapMarker) => {
+            sm.toggleInfoWindow(false);
+        });
+        this.selectedMapData.forEach(d => {
+            d.data && d.data.forEach(dp => {
+                dp.points && dp.points.forEach(p => {
+                    points.push({
+                        d: d,
+                        p: dp,
+                        point: p
+                    });
+                });
+            });
+        });
+
+        this.mapMarkers = points.map(p => {
+            return new MapMarker(p.point, { text:`${p.d.name} ${p.p.bigType}|${p.p.type}`});
+        });
+    }
+
+    markerAdded(event: any) {
+        google.maps.event.clearInstanceListeners(event.originalMarker);
+        event.options.originalMarker = event.originalMarker;
+        google.maps.event.addListener(event.originalMarker, "click", function (args: any) {
+            event.options.toggleInfoWindow();
+            console.log(event);
+        });
+        var that = this;
+        google.maps.event.addListener(event.originalMarker, "dblclick", function (args: any) {
+
+        });
     }
 
     listIndicateLoading(loading: boolean) {
