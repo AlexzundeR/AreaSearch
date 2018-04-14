@@ -1,0 +1,46 @@
+﻿<div>
+    <div class="row">
+        Поиск объектов по карте
+    </div>
+    <div class="row map-page-container">
+        <div class="filter-column">
+            <input [(ngModel)]="searchString" placeholder="Запрос по названию" />
+            <input [(ngModel)]="typeString" placeholder="Запрос по типу" />
+            <input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />
+            <button (click)="onSearchClick($event)">Найти</button>
+            <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
+            <dx-list #dataList
+                     [indicateLoading]="true"
+                     selectionMode="all"
+                     selectAllMode="allPages"
+                     [showSelectionControls]="true"
+                     [selectedItemKeys]="selectedMapData"
+                     (onSelectionChanged)="selectedMapDataChanged($event)"
+                     itemTemplate="itemTemplate"
+                     [items]="mapData">
+                <div *dxTemplate="let item of 'itemTemplate'">
+                    <div class="mapData">
+                        <div>{{item.name}}</div>
+                        <div>
+                            <span *ngFor="let mapPoints of item.data" class="label label-info">{{mapPoints.bigType}}|{{mapPoints.type}}</span>
+                        </div>
+                    </div>
+                </div>
+
+            </dx-list>
+        </div>
+        <div class="map-column">
+            <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31"
+                    #map
+                    center="Moscow Russia"
+                    [zoom]="10"
+                    [height]="'100%'"
+                    width="100%"
+                    [controls]="true"
+                    [autoAdjust]="false"
+                    (onReady)="onMapReady($event)">
+            </dx-map>
+        </div>
+    </div>
+
+</div>
