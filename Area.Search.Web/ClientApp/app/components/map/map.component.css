@@ -1,46 +1,93 @@
+
 .map-page-container {
     display: flex;
 }
 
-@media (max-width: 767px) {
-    /* On small screens, the nav menu spans the full width of the screen. Leave a space for it. */
-    .body-content {
-        padding-top: 50px;
-    }
+.filter-column {
+    position: relative;
+}
 
+.filter-controls {
+    flex: 0 1 auto;
+}
+
+.filter-list {
+    /*height: 100%*/
+    flex: 1;
+    min-height:400px;
+}
+
+.filter-container {
+    padding-top:10px;
+    position: absolute;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+
+@media (max-width: 769px) {
+    /* On small screens, the nav menu spans the full width of the screen. Leave a space for it. */
     .filter-column {
+        padding-top: 10px;
         flex: 1 1 auto;
-        max-height:800px;
-        height:800px;
+        height: 50%;
     }
 
     .map-column {
-        flex: 1 0 auto;
+        flex: 1 1 auto;
         width: 100%;
-        height:600px;
-        margin-bottom:20px;
+        height: 50%;
     }
 
     .map-page-container {
-        flex-direction:column-reverse;
+        position: absolute;
+        height: 200%;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        flex-direction: column-reverse;
     }
 }
 
-@media (min-width: 767px) {
+@media (min-width: 769px) {
+    /deep/ body {
+        height: 100%
+    }
+
+    /deep/ app {
+        height: 100%
+    }
+
+    /deep/ map {
+        height: 100%;
+        position: absolute;
+        width: 100%;
+    }
+
+    /deep/ .body-content {
+        height: 100%
+    }
+
+    .filter-controls {
+        padding-left: 10px;
+    }
+
     .filter-column {
         flex: 1 1 40%;
-        max-height: 800px;
-        min-width:400px;
+        height: 99%;
+        min-width: 200px;
     }
 
     .map-column {
         flex: 1 0 60%;
-        height: 800px;
-        margin-bottom: 20px;
+        height: 100%;
+        width: 100%;
     }
 
     .map-page-container {
-        width:100%;
+        width: 100%;
         flex-direction: row;
+        height: 100%
     }
 }

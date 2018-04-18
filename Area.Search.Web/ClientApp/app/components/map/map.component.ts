@@ -3,10 +3,14 @@ import { MapData, MapDataPoint } from '../../models/map-data.model';
 import { } from '@types/googlemaps';
 import { MapService } from '../../services/map.service';
 import { DxListComponent } from 'devextreme-angular/ui/list';
-import { StateService } from '../../services/state.service';
+import DataSource from 'devextreme/data/data_source';
+import ArrayStore from 'devextreme/data/array_store';
 import { DxMapComponent } from 'devextreme-angular/ui/map';
-import { forEach } from '@angular/router/src/utils/collection';
+//import { forEach } from '@angular/router/src/utils/collection';
+
+import { StateService } from '../../services/state.service';
 import { MapMarker } from '../../models/map-marker.type';
+import { ChangeDetectorRef } from '@angular/core';
 
 
 
@@ -17,6 +21,7 @@ import { MapMarker } from '../../models/map-marker.type';
 })
 export class MapComponent {
     mapData: MapData[] = [];
+    mapDataSource: MapData[] = [];
     @Input() searchString: string = "";
     @Input() typeString: string = "";
     @Input() ignoreTypeString: string = "";
@@ -31,9 +36,15 @@ export class MapComponent {
     mapCenter: any;
     mapZoom: any;
 
-    constructor(private mapService: MapService, private stateService: StateService) {
+    constructor(
+        private mapService: MapService,
+        private stateService: StateService,
+        private changesDetector: ChangeDetectorRef) {
+
         this.mapChanged = this.mapChanged.bind(this);
     }
+
+
     ngOnInit() {
         var state = this.stateService.loadState();
         if (state) {
@@ -57,6 +68,8 @@ export class MapComponent {
                 this.selectedMapData = state.selectedMapData.map((e: any) => this.mapData.find(d => d.id == e.id));
             }
         }
+
+        this.updateDataSource();
     }
 
     mapDataSelectionChanged(event: { selectedItem: MapData }) {
@@ -82,10 +95,12 @@ export class MapComponent {
     }
 
     selectedMapDataChanged(e: any) {
-        (e.addedItems as MapData[]).forEach(e => {
-            this.selectedMapData.push(e);
+        var newData = this.selectedMapData.filter(d => (e.removedItems as MapData[]).every(p => p.id != d.id));
+        (e.addedItems as MapData[]).filter(d => newData.every(p => p.id != d.id)).forEach(e => {
+            newData.push(e);
         });
-        this.selectedMapData = this.selectedMapData.filter(d => !(e.removedItems as MapData[]).some(p => p == d));
+        //this.changesDetector.detectChanges();
+        this.selectedMapData = newData;
         this.updateState();
     }
 
@@ -107,7 +122,7 @@ export class MapComponent {
         });
 
         this.mapMarkers = points.map(p => {
-            return new MapMarker(p.point, { text:`${p.d.name} ${p.p.bigType}|${p.p.type}`});
+            return new MapMarker(p.point, { text: `${p.d.name} ${p.p.bigType}|${p.p.type}` });
         });
     }
 
@@ -144,6 +159,7 @@ export class MapComponent {
             this.mapService.mapDataQuery(this.searchString, this.typeString, this.ignoreTypeString, { ne: ne, sw: sw })
                 .then((data) => {
                     this.mapData = data;
+                    this.updateDataSource();
                     this.listIndicateLoading(false);
                     this.updateState();
                 });
@@ -151,10 +167,15 @@ export class MapComponent {
             this.mapService.mapDataQuery(this.searchString, this.typeString, this.ignoreTypeString)
                 .then((data) => {
                     this.mapData = data;
+                    this.updateDataSource();
                     this.listIndicateLoading(false);
                     this.updateState();
                 });;
         }
+    }
+
+    updateDataSource() {
+        this.mapDataSource = this.mapData;
     }
 
     updateState() {

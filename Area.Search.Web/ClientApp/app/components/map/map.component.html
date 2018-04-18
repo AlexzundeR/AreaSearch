@@ -1,49 +1,53 @@
-﻿<div>
-    <div class="row">
-        Поиск объектов по карте
-    </div>
-    <div class="row map-page-container">
-        <div class="filter-column">
-            <input [(ngModel)]="searchString" placeholder="Запрос по названию" />
-            <input [(ngModel)]="typeString" placeholder="Запрос по типу" />
-            <input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />
-            <button (click)="onSearchClick($event)">Найти</button>
-            <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
-            <div><button (click)="onShowOnMapClick($event)">Показать на карте</button></div>
-            <dx-list #dataList
-                     [indicateLoading]="true"
-                     selectionMode="all"
-                     selectAllMode="allPages"
-                     [showSelectionControls]="true"
-                     [selectedItemKeys]="selectedMapData"
-                     (onSelectionChanged)="selectedMapDataChanged($event)"
-                     itemTemplate="itemTemplate"
-                     [items]="mapData">
-                <div *dxTemplate="let item of 'itemTemplate'">
-                    <div class="mapData">
+﻿<div class="map-page-container">
+    <div class="filter-column">
+        <div class="filter-container">
+            <div class="filter-controls">
+                <input [(ngModel)]="searchString" placeholder="Запрос по названию" />
+                <input [(ngModel)]="typeString" placeholder="Запрос по типу" />
+                <input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />
+                <button (click)="onSearchClick($event)">Найти</button>
+                <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
+                <span style="margin-left:10px">Найдено: {{mapData?.length || 0}}</span>
+                <button (click)="onShowOnMapClick($event)">Показать на карте</button>
+            </div>
+            <div class="filter-list">
+                <dx-list #dataList
+                         width="100%"
+                         pageLoadMode="scrollBottom"
+                         [indicateLoading]="true"
+                         [searchEnabled]="true"
+                         keyExpr="id"
+                         searchExpr="name"
+                         searchMode="contains"
+                         selectionMode="all"
+                         selectAllMode="allPages"
+                         [showSelectionControls]="true"
+                         [selectedItems]="selectedMapData"
+                         (onSelectionChanged)="selectedMapDataChanged($event)"
+                         [dataSource]="mapDataSource">
+                    <div *dxTemplate="let item of 'item'" class="mapData">
                         <div>{{item.name}}</div>
                         <div>
                             <span *ngFor="let mapPoints of item.data" class="label label-info">{{mapPoints.bigType}}|{{mapPoints.type}}</span>
                         </div>
                     </div>
-                </div>
 
-            </dx-list>
-        </div>
-        <div class="map-column">
-            <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31"
-                    #map
-                    center="Moscow Russia"
-                    [zoom]="10"
-                    [height]="'100%'"
-                    width="100%"
-                    [(markers)]="mapMarkers"
-                    [controls]="true"
-                    [autoAdjust]="true"
-                    (onReady)="onMapReady($event)"
-                    (onMarkerAdded)="markerAdded($event)">
-            </dx-map>
+                </dx-list>
+            </div>
         </div>
     </div>
-
+    <div class="map-column">
+        <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31"
+                #map
+                center="Moscow Russia"
+                [zoom]="10"
+                height="100%"
+                width="100%"
+                [(markers)]="mapMarkers"
+                [controls]="true"
+                [autoAdjust]="false"
+                (onReady)="onMapReady($event)"
+                (onMarkerAdded)="markerAdded($event)">
+        </dx-map>
+    </div>
 </div>

@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="ClientApp\app\models\mapData.model.ts" />
+    <None Remove="ClientApp\app\models\map-data.model.ts" />
     <None Remove="ClientApp\app\services\map.service.ts" />
     <None Remove="ClientApp\app\services\state.service.ts" />
   </ItemGroup>
@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <TypeScriptCompile Include="ClientApp\app\models\mapData.model.ts" />
+    <TypeScriptCompile Include="ClientApp\app\models\map-data.model.ts" />
     <TypeScriptCompile Include="ClientApp\app\services\state.service.ts" />
     <TypeScriptCompile Include="ClientApp\app\services\map.service.ts" />
   </ItemGroup>
