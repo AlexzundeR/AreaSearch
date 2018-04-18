@@ -42,8 +42,17 @@ export class MapComponent {
         private changesDetector: ChangeDetectorRef) {
 
         this.mapChanged = this.mapChanged.bind(this);
+        this.onWindowResize = this.onWindowResize.bind(this);
+        window.addEventListener("resize", this.onWindowResize);
     }
 
+    onWindowResize() {
+        if (this.map && window.innerWidth < 769) {
+            this.map.setOptions({ gestureHandling: 'cooperative' });
+        } else {
+            this.map.setOptions({ gestureHandling: 'greedy' });
+        }
+    }
 
     ngOnInit() {
         var state = this.stateService.loadState();
@@ -86,7 +95,9 @@ export class MapComponent {
         }
         this.map.addListener('center_changed', this.mapChanged);
         this.map.addListener('zoom_changed', this.mapChanged);
+        this.onWindowResize();   
     }
+
 
     mapChanged() {
         this.mapCenter = (this.map as google.maps.Map).getCenter();
