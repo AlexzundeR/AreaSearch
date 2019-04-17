@@ -47,6 +47,10 @@ export class MapComponent {
         this.mapChanged = this.mapChanged.bind(this);
         this.onWindowResize = this.onWindowResize.bind(this);
         window.addEventListener("resize", this.onWindowResize);
+
+        this.mapService.allTypesObs.subscribe((types) => {
+            this.allTypes = types.sort();
+        });
     }
 
     onWindowResize() {
@@ -59,10 +63,7 @@ export class MapComponent {
 
     ngOnInit() {
         var state = this.stateService.loadState();
-        if (state) {
-            this.mapService.allTypesPromise.then((types) => {
-                this.allTypes = types.sort();
-            });
+        if (state) {  
             this.mapData = state.mapData;
             this.mapControl.center = state.center || this.defaultCenter;
             this.mapCenter = state.center || this.defaultCenter;

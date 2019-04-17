@@ -12,10 +12,13 @@ const allGeo = require('../static/all-2019.json');
 const allTypes = require('../static/all-types-2019.json');
 import { } from '@types/googlemaps';
 import { Http } from "@angular/http";
+import { BehaviorSubject } from "rxjs/Rx";
 
 
 @Injectable()
 export class MapService {
+
+    
 
     constructor(http: Http) {
         http.get(allGeo as string)
@@ -26,12 +29,11 @@ export class MapService {
                 this.geoData = e;
             });
 
-        this.allTypesPromise = http.get(allTypes as string)
+        http.get(allTypes as string)
             .map(res => {
                 return res.json() as string[];
-            }).toPromise().then(e => {
-                this.allTypes = e;
-                return e;
+            }).subscribe(resp => {
+                this.allTypesSubj.next(resp);
             });
     }
 
@@ -44,7 +46,11 @@ export class MapService {
         //...allGeo4 as MapData[],
         //...allGeo5 as MapData[]
     ];
-    allTypesPromise: Promise<string[]>;
+
+    private allTypesSubj: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+    get allTypesObs(): Observable<string[]> {
+        return this.allTypesSubj.asObservable();
+    }
     allTypes: string[] = allTypes as string[];
 
     mapDataQuery(searchString: string, typeString: string, ignoreTypeString: string, mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng }): Promise<MapData[]> {
