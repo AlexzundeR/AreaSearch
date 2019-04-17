@@ -5,7 +5,9 @@ import { HttpModule } from '@angular/http';
 import { RouterModule } from '@angular/router';
 import { DxMapModule } from 'devextreme-angular/ui/map';
 import { DxSelectBoxModule } from 'devextreme-angular/ui/select-box';
+import { DxTagBoxModule } from 'devextreme-angular/ui/tag-box';
 import { DxListModule  } from 'devextreme-angular/ui/list';
+import { DxTextBoxModule } from 'devextreme-angular/ui/text-box';
 
 import { AppComponent } from './components/app/app.component';
 import { MapService } from './services/map.service';
@@ -26,7 +28,7 @@ import { StateService } from './services/state.service';
             { path: 'map', component: MapComponent },
             { path: '**', redirectTo: '/map' }
         ])
-        , DxMapModule, DxSelectBoxModule, DxListModule
+        , DxMapModule, DxSelectBoxModule, DxListModule, DxTagBoxModule, DxTextBoxModule
     ],
     providers: [
         MapService,

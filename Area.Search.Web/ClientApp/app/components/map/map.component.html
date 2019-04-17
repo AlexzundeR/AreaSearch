@@ -2,15 +2,32 @@
     <div class="filter-column">
         <div class="filter-container">
             <div class="filter-controls">
-                <input [(ngModel)]="searchString" placeholder="Запрос по названию" />
-                <input [(ngModel)]="typeString" placeholder="Запрос по типу" />
-                <input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />
+                <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
+                <dx-text-box [(value)]="searchString" placeholder="Запрос по названию"></dx-text-box>
+                <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
+                <dx-tag-box [searchEnabled]="true"
+                            [items]="allTypes"
+                            [acceptCustomValue]="true"
+                            [(value)]="selectedTypes"
+                            (onSelectionChanged)="typeSelectionChanged($event)"
+                            placeholder="Нужные типы">
+                </dx-tag-box>
+                <dx-tag-box [searchEnabled]="true"
+                            [items]="allTypes"
+                            [acceptCustomValue]="true"
+                            [(value)]="ignoredTypes"
+                            (onSelectionChanged)="ignoredTypeSelectionChanged($event)"
+                            placeholder="Игнорировать типы"
+                            style="margin-bottom:5px">
+                </dx-tag-box>
+                <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
+                <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
                 <button (click)="onSearchClick($event)">Найти</button>
                 <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
                 <span style="margin-left:10px">Найдено: {{mapData?.length || 0}}</span>
                 <button (click)="onShowOnMapClick($event)">Показать на карте</button>
             </div>
-            <div class="filter-list">
+            <div class="filter-list" style="margin-top:5px">
                 <dx-list #dataList
                          width="100%"
                          pageLoadMode="scrollBottom"

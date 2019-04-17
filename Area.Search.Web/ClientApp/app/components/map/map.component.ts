@@ -22,9 +22,12 @@ import { ChangeDetectorRef } from '@angular/core';
 export class MapComponent {
     mapData: MapData[] = [];
     mapDataSource: MapData[] = [];
+    allTypes: string[] = [];
     @Input() searchString: string = "";
     @Input() typeString: string = "";
     @Input() ignoreTypeString: string = "";
+    selectedTypes: string[] = [];
+    ignoredTypes: string[] = [];
     mapMarkers: MapMarker[] = [];
 
     defaultCenter = [55.7558, 37.6173];
@@ -57,6 +60,9 @@ export class MapComponent {
     ngOnInit() {
         var state = this.stateService.loadState();
         if (state) {
+            this.mapService.allTypesPromise.then((types) => {
+                this.allTypes = types.sort();
+            });
             this.mapData = state.mapData;
             this.mapControl.center = state.center || this.defaultCenter;
             this.mapCenter = state.center || this.defaultCenter;
@@ -66,9 +72,15 @@ export class MapComponent {
             }
             if (state.typeString) {
                 this.typeString = state.typeString;
+                if (this.typeString) {
+                    this.selectedTypes = this.typeString.split(' ');
+                }
             }
             if (state.ignoreTypeString) {
                 this.ignoreTypeString = state.ignoreTypeString;
+                if (this.ignoreTypeString) {
+                    this.ignoredTypes = this.ignoreTypeString.split(' ');
+                }
             }
             if (state.useBoundaries) {
                 this.useMapBounds = state.useBoundaries;
@@ -79,6 +91,15 @@ export class MapComponent {
         }
 
         this.updateDataSource();
+    }
+
+
+    typeSelectionChanged() {
+        this.typeString = this.selectedTypes.join(' ');
+    }
+
+    ignoredTypeSelectionChanged() {
+        this.ignoreTypeString = this.ignoredTypes.join(' ');
     }
 
     mapDataSelectionChanged(event: { selectedItem: MapData }) {

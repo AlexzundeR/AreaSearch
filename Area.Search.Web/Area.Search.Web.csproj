@@ -27,13 +27,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="ClientApp\app\static\all.json" />
+    <Content Include="ClientApp\app\static\all-2019-1.json" />
+    <Content Include="ClientApp\app\static\all-2019-2.json" />
+    <Content Include="ClientApp\app\static\all-2019-3.json" />
+    <Content Include="ClientApp\app\static\all-2019-4.json" />
+    <Content Include="ClientApp\app\static\all-2019-5.json" />
+    <Content Include="ClientApp\app\static\all-2019.json" />
+    <Content Include="ClientApp\app\static\all-types-2019.json" />
   </ItemGroup>
 
   <ItemGroup>
     <TypeScriptCompile Include="ClientApp\app\models\map-data.model.ts" />
     <TypeScriptCompile Include="ClientApp\app\services\state.service.ts" />
     <TypeScriptCompile Include="ClientApp\app\services\map.service.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\data\" />
   </ItemGroup>
 
   <Target Name="DebugRunWebpack" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('wwwroot\dist') ">

@@ -1,7 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 const merge = require('webpack-merge');
-const AotPlugin = require('@ngtools/webpack').AotPlugin;
 const CheckerPlugin = require('awesome-typescript-loader').CheckerPlugin;
 
 module.exports = (env) => {
@@ -17,11 +16,11 @@ module.exports = (env) => {
         },
         module: {
             rules: [
-                { test: /\.ts$/, use: isDevBuild ? ['awesome-typescript-loader?silent=true', 'angular2-template-loader', 'angular2-router-loader'] : '@ngtools/webpack' },
+                { test: /\.ts$/, use: ['awesome-typescript-loader?silent=true', 'angular2-template-loader', 'angular2-router-loader'] },
                 { test: /\.html$/, use: 'html-loader?minimize=false' },
                 { test: /\.css$/, use: ['to-string-loader', isDevBuild ? 'css-loader' : 'css-loader?minimize'] },
                 { test: /\.(png|jpg|jpeg|gif|svg)$/, use: 'url-loader?limit=25000' },
-                { test: /\.json$/, use: 'json-loader' },
+                { test: /\.json$/, use: 'file-loader?name=[name].json' }
             ]
         },
         plugins: [new CheckerPlugin()]

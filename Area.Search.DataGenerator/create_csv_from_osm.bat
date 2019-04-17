@@ -1,1 +1,2 @@
-﻿osmconvert.exe ru-mow.osm --csv="@oname @id type @lon @lat place highway natural historic sport leisure public_transport railway name add:full old_name" -o="msk-names2.csv" --all-to-nodes
+﻿.\osmconvert.exe ru-mow.osm --csv="@oname @id type @lon @lat place highway natural historic sport leisure public_transport railway tourism military man_made name add:full old_name" -o="msk-names-2019.csv" --all-t
+o-nodes
