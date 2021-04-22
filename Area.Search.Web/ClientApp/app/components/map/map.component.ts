@@ -1,17 +1,20 @@
-import { Component, Input, ViewChild } from '@angular/core';
-import { MapData, MapDataPoint } from '../../models/map-data.model';
-import { } from '@types/googlemaps';
-import { MapService } from '../../services/map.service';
-import { DxListComponent } from 'devextreme-angular/ui/list';
+import {Component, Input, OnChanges, SimpleChanges, ViewChild} from '@angular/core';
+import {MapData, MapDataPoint} from '../../models/map-data.model';
+import {} from '@types/googlemaps';
+import {MapService} from '../../services/map.service';
+import {DxListComponent} from 'devextreme-angular/ui/list';
 import DataSource from 'devextreme/data/data_source';
 import ArrayStore from 'devextreme/data/array_store';
-import { DxMapComponent } from 'devextreme-angular/ui/map';
+import {DxMapComponent} from 'devextreme-angular/ui/map';
 //import { forEach } from '@angular/router/src/utils/collection';
 
-import { StateService } from '../../services/state.service';
-import { MapMarker } from '../../models/map-marker.type';
-import { ChangeDetectorRef } from '@angular/core';
-
+import {StateService} from '../../services/state.service';
+import {MapMarker} from '../../models/map-marker.type';
+import {ChangeDetectorRef} from '@angular/core';
+import {RouteService} from "../../services/route.service";
+import {Route, RoutePoint} from "../../models/route.type";
+import {RouteDrawingService} from "../../services/routeDrawing.service";
+import {Observable} from "rxjs/Observable";
 
 
 @Component({
@@ -19,29 +22,37 @@ import { ChangeDetectorRef } from '@angular/core';
     templateUrl: './map.component.html',
     styleUrls: ['./map.component.css']
 })
-export class MapComponent {
+export class MapComponent implements OnChanges {
     mapData: MapData[] = [];
     mapDataSource: MapData[] = [];
     allTypes: string[] = [];
     @Input() searchString: string = "";
-    @Input() typeString: string = "";
-    @Input() ignoreTypeString: string = "";
+    // @Input() typeString: string = "";
+    // @Input() ignoreTypeString: string = "";
     selectedTypes: string[] = [];
     ignoredTypes: string[] = [];
     mapMarkers: MapMarker[] = [];
 
+    routeDataSource: Observable<RoutePoint[]>;
+
     defaultCenter = [55.7558, 37.6173];
     @Input() useMapBounds: boolean = true;
+    @Input() showCurrentPosition: boolean = false;
+    @Input() showRoute: boolean = true;
     @Input() selectedMapData: MapData[] = [];
+    @Input() selectedPoints: RoutePoint[] = [];
+    @ViewChild('routeList') routeList: DxListComponent;
     @ViewChild('dataList') dataList: DxListComponent;
     @ViewChild('map') mapControl: DxMapComponent;
-    map: any;
+    map: google.maps.Map;
     mapCenter: any;
     mapZoom: any;
 
     constructor(
         private mapService: MapService,
         private stateService: StateService,
+        private routeService: RouteService,
+        private routeDrawingService: RouteDrawingService,
         private changesDetector: ChangeDetectorRef) {
 
         this.mapChanged = this.mapChanged.bind(this);
@@ -51,19 +62,26 @@ export class MapComponent {
         this.mapService.allTypesObs.subscribe((types) => {
             this.allTypes = types.sort();
         });
+        this.routeDataSource = this.routeService.$routePoints.map(p=>p);
     }
 
     onWindowResize() {
         if (this.map && window.innerWidth < 769) {
-            this.map.setOptions({ gestureHandling: 'cooperative' });
+            this.map.setOptions({gestureHandling: 'cooperative'});
         } else {
-            this.map.setOptions({ gestureHandling: 'greedy' });
+            this.map.setOptions({gestureHandling: 'greedy'});
+        }
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if ('showRoute' in changes) {
+            this.redrawRoute();
         }
     }
 
     ngOnInit() {
         var state = this.stateService.loadState();
-        if (state) {  
+        if (state) {
             this.mapData = state.mapData;
             this.mapControl.center = state.center || this.defaultCenter;
             this.mapCenter = state.center || this.defaultCenter;
@@ -72,15 +90,17 @@ export class MapComponent {
                 this.searchString = state.searchString;
             }
             if (state.typeString) {
-                this.typeString = state.typeString;
-                if (this.typeString) {
-                    this.selectedTypes = this.typeString.split(' ');
+                try {
+                    this.selectedTypes = JSON.parse(state.typeString);
+                } catch (e) {
+                    this.selectedTypes = [];
                 }
             }
             if (state.ignoreTypeString) {
-                this.ignoreTypeString = state.ignoreTypeString;
-                if (this.ignoreTypeString) {
-                    this.ignoredTypes = this.ignoreTypeString.split(' ');
+                try {
+                    this.ignoredTypes = JSON.parse(state.ignoreTypeString);
+                } catch (e) {
+                    this.ignoredTypes = [];
                 }
             }
             if (state.useBoundaries) {
@@ -90,17 +110,17 @@ export class MapComponent {
                 this.selectedMapData = state.selectedMapData.map((e: any) => this.mapData.find(d => d.id == e.id));
             }
         }
-
+        this.redrawRoute();
         this.updateDataSource();
     }
 
 
     typeSelectionChanged() {
-        this.typeString = this.selectedTypes.join(' ');
+        //this.typeString = this.selectedTypes.join(' ');
     }
 
     ignoredTypeSelectionChanged() {
-        this.ignoreTypeString = this.ignoredTypes.join(' ');
+        //this.ignoreTypeString = this.ignoredTypes.join(' ');
     }
 
     mapDataSelectionChanged(event: { selectedItem: MapData }) {
@@ -117,7 +137,9 @@ export class MapComponent {
         }
         this.map.addListener('center_changed', this.mapChanged);
         this.map.addListener('zoom_changed', this.mapChanged);
-        this.onWindowResize();   
+        this.onWindowResize();
+
+        this.routeDrawingService.setMap(this.map);
     }
 
 
@@ -155,7 +177,7 @@ export class MapComponent {
         });
 
         this.mapMarkers = points.map(p => {
-            return new MapMarker(p.point, { text: `${p.d.name} ${p.p.bigType}|${p.p.type}` });
+            return new MapMarker(p.point, {text: `${p.d.name} ${p.p.bigType}|${p.p.type}`});
         });
     }
 
@@ -189,7 +211,7 @@ export class MapComponent {
             if (bounds == null) return;
             var ne = bounds.getNorthEast(); // LatLng of the north-east corner
             var sw = bounds.getSouthWest();
-            this.mapService.mapDataQuery(this.searchString, this.typeString, this.ignoreTypeString, { ne: ne, sw: sw })
+            this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes, {ne: ne, sw: sw})
                 .then((data) => {
                     this.mapData = data;
                     this.updateDataSource();
@@ -197,13 +219,14 @@ export class MapComponent {
                     this.updateState();
                 });
         } else {
-            this.mapService.mapDataQuery(this.searchString, this.typeString, this.ignoreTypeString)
+            this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes)
                 .then((data) => {
                     this.mapData = data;
                     this.updateDataSource();
                     this.listIndicateLoading(false);
                     this.updateState();
-                });;
+                });
+
         }
     }
 
@@ -217,10 +240,71 @@ export class MapComponent {
             center: this.mapCenter,
             zoom: this.mapZoom,
             searchString: this.searchString,
-            typeString: this.typeString,
-            ignoreTypeString: this.ignoreTypeString,
+            typeString: JSON.stringify(this.selectedTypes),
+            ignoreTypeString: JSON.stringify(this.ignoredTypes),
             useBoundaries: this.useMapBounds,
             selectedMapData: this.selectedMapData
         })
+    }
+
+    onAddRoutePointClick() {
+        const center = this.map ? this.map.getCenter() : new google.maps.LatLng(55.7558, 37.613);
+
+        const newPoint = {
+            name: '',
+            coordinates: {
+                lng: center.lng(),
+                lat: center.lat()
+            },
+            routeId: this.routeService.route.routeId
+        } as RoutePoint;
+
+        this.routeService.addPoint(newPoint);
+    }
+
+    onDeleteRoutePointsClick() {
+        this.routeService.deletePoints(this.selectedPoints).then(() => {
+            this.selectedPoints = [];
+        });
+    }
+
+    selectedPointsChanged(e: any) {
+        var newData = this.selectedPoints.filter(d => (e.removedItems as RoutePoint[]).every(p => p.pointId != d.pointId));
+        (e.addedItems as RoutePoint[]).filter(d => newData.every(p => p.pointId != d.pointId)).forEach(e => {
+            newData.push(e);
+        });
+        //this.changesDetector.detectChanges();
+        this.selectedPoints = newData;
+    }
+
+    redrawRoute() {
+        if (this.showRoute) {
+            this.routeService.getRoute(1).then();
+        }
+        this.routeDrawingService.setEnabled(this.showRoute);
+    }
+
+    onShowCurrentPositionChanged(){
+        this.routeDrawingService.setCurrentPositionShowEnabled(this.showCurrentPosition);
+    }
+
+    onRoutePointsReordered(e: { itemData: RoutePoint, fromIndex: number, toIndex: number }) {
+        this.routeService.replacePoint(e.itemData, e.fromIndex, e.toIndex);
+    }
+
+    pointNameChanged($event: any, point: RoutePoint) {
+        const newValue = $event.target.value;
+        if (point.name === newValue) {
+            return;
+        }
+        this.routeService.setPoint(point, {name: newValue} as RoutePoint);
+    }
+
+    pointDescriptionChanged($event: any, point: RoutePoint) {
+        const newValue = $event.target.value;
+        if (point.description === newValue) {
+            return;
+        }
+        this.routeService.setPoint(point, {description: newValue} as RoutePoint);
     }
 }

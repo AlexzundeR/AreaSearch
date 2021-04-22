@@ -8,8 +8,8 @@ import { toObservable } from "@angular/forms/src/validators";
 //const allGeo3 = require('../static/all-2019-3.json');
 //const allGeo4 = require('../static/all-2019-4.json');
 //const allGeo5 = require('../static/all-2019-5.json');
-const allGeo = require('../static/all-2019.json');
-const allTypes = require('../static/all-types-2019.json');
+const allGeo = require('../static/all-2021.json');
+const allTypes = require('../static/all-types-2021.json');
 import { } from '@types/googlemaps';
 import { Http } from "@angular/http";
 import { BehaviorSubject } from "rxjs/Rx";
@@ -18,7 +18,7 @@ import { BehaviorSubject } from "rxjs/Rx";
 @Injectable()
 export class MapService {
 
-    
+
 
     constructor(http: Http) {
         http.get(allGeo as string)
@@ -53,7 +53,7 @@ export class MapService {
     }
     allTypes: string[] = allTypes as string[];
 
-    mapDataQuery(searchString: string, typeString: string, ignoreTypeString: string, mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng }): Promise<MapData[]> {
+    mapDataQuery(searchString: string, selectedTypes: string[], ignoredTypes: string[], mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng }): Promise<MapData[]> {
         var mapData = this.geoData;
         return new Promise((res) => {
             var regexp = new RegExp(searchString, 'ig');
@@ -64,16 +64,26 @@ export class MapService {
 
             mapData = mapData.map(d => {
                 var filteredData = d.data;
+                if (!filteredData || !filteredData.length){
+                    return null;
+                }
                 if (mapBounds) {
-                    filteredData = filteredData && filteredData.filter(e => e.points && e.points.some(p => p[0] < mapBounds.ne.lat() && p[1] < mapBounds.ne.lng() && p[0] > mapBounds.sw.lat() && p[1] > mapBounds.sw.lng()));
+                    filteredData = filteredData.filter(e => e.points && e.points.some(p => p[0] < mapBounds.ne.lat() && p[1] < mapBounds.ne.lng() && p[0] > mapBounds.sw.lat() && p[1] > mapBounds.sw.lng()));
                 }
-                if (typeString) {
-                    var typeStringParts = typeString.split(' ');
-                    filteredData = filteredData && filteredData.filter(e => typeStringParts.every(p => p === e.type || p === e.bigType));
+                if (!filteredData.length){
+                    return null;
                 }
-                if (ignoreTypeString) {
-                    var ignoreTypeStringParts = ignoreTypeString.split(' ');
-                    filteredData = filteredData && filteredData.filter(e => !ignoreTypeStringParts.some(p => p === e.type || p === e.bigType));
+                var hasType = true;
+                if (selectedTypes && selectedTypes.length) {
+                    hasType = filteredData.some(e => selectedTypes.some(p => p === e.type));
+                }
+
+                if (!hasType){
+                    return null;
+                }
+
+                if (ignoredTypes && ignoredTypes.length) {
+                    filteredData = filteredData && filteredData.filter(e => !ignoredTypes.some(p => p === e.type));
                 }
                 if (filteredData && filteredData.length) {
                     return {

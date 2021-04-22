@@ -13,6 +13,9 @@ import { AppComponent } from './components/app/app.component';
 import { MapService } from './services/map.service';
 import { MapComponent } from './components/map/map.component';
 import { StateService } from './services/state.service';
+import {RouteService} from "./services/route.service";
+import {DxTabPanelModule} from "devextreme-angular";
+import {RouteDrawingService} from "./services/routeDrawing.service";
 
 @NgModule({
     declarations: [
@@ -24,15 +27,17 @@ import { StateService } from './services/state.service';
         HttpModule,
         FormsModule,
         RouterModule.forRoot([
-            { path: '', component: MapComponent, pathMatch: 'full' },
-            { path: 'map', component: MapComponent },
-            { path: '**', redirectTo: '/map' }
+            {path: '', component: MapComponent, pathMatch: 'full'},
+            {path: 'map', component: MapComponent},
+            {path: '**', redirectTo: '/map'}
         ])
-        , DxMapModule, DxSelectBoxModule, DxListModule, DxTagBoxModule, DxTextBoxModule
+        , DxMapModule, DxSelectBoxModule, DxListModule, DxTagBoxModule, DxTextBoxModule, DxTabPanelModule
     ],
     providers: [
         MapService,
-        StateService
+        StateService,
+        RouteService,
+        RouteDrawingService
     ]
 })
 export class AppModuleShared {
