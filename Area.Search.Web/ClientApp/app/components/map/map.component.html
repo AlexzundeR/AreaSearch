@@ -9,7 +9,7 @@
             </div>
             <dx-tab-panel
                 #tabPanel
-                height="auto"
+                height="100%"
                 width="100%"
                 [dataSource]="[{id:'filter', text: 'Поиск'}, {id:'route',text:'Маршрут'}]"
                 [selectedIndex]="0"
@@ -22,64 +22,67 @@
                 </div>
                 <ng-container *dxTemplate="let tab of 'item'">
                     <ng-container *ngIf="tab.id === 'filter'">
-                        <div class="filter-controls" style="margin-top: 5px">
-                            <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
-                            <dx-text-box [(value)]="searchString" placeholder="Запрос по названию"></dx-text-box>
-                            <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
-                            <dx-tag-box [searchEnabled]="true"
-                                        [items]="allTypes"
-                                        [acceptCustomValue]="true"
-                                        [(value)]="selectedTypes"
-                                        (onSelectionChanged)="typeSelectionChanged($event)"
-                                        placeholder="Нужные типы">
-                            </dx-tag-box>
-                            <dx-tag-box [searchEnabled]="true"
-                                        [items]="allTypes"
-                                        [acceptCustomValue]="true"
-                                        [(value)]="ignoredTypes"
-                                        (onSelectionChanged)="ignoredTypeSelectionChanged($event)"
-                                        placeholder="Игнорировать типы"
-                                        style="margin-bottom:5px">
-                            </dx-tag-box>
-                            <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
-                            <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
-                            <div>
-                                <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
-                                <span><input [(ngModel)]="showCurrentPosition"
-                                             (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
-                            </div>
-                            <div style="margin-top: 5px;">
-                                <button (click)="onSearchClick($event)">Найти</button>
-                                <span style="margin-left:10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
-                                <button (click)="onShowOnMapClick($event)">Показать на карте</button>
-                            </div>
-
-                        </div>
-
-                        <div class="filter-list" style="margin-top:5px">
-                            <dx-list #dataList
-                                     width="100%"
-                                     pageLoadMode="scrollBottom"
-                                     [indicateLoading]="true"
-                                     [searchEnabled]="true"
-                                     keyExpr="id"
-                                     searchExpr="name"
-                                     searchMode="contains"
-                                     selectionMode="all"
-                                     selectAllMode="allPages"
-                                     [showSelectionControls]="true"
-                                     [selectedItems]="selectedMapData"
-                                     (onSelectionChanged)="selectedMapDataChanged($event)"
-                                     [dataSource]="mapDataSource">
-                                <div *dxTemplate="let item of 'item'" class="mapData">
-                                    <div style="overflow-wrap: anywhere; white-space: normal">{{item.name}}</div>
-                                    <div style="overflow-wrap: anywhere; white-space: normal">
-                            <span *ngFor="let mapPoints of item.data" class="label label-info"
-                                  style="margin-left: 1px;">{{mapPoints.type}}</span>
-                                    </div>
+                        <div style="height: 100%">
+                            <div class="filter-controls" style="margin-top: 5px;">
+                                <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
+                                <dx-text-box [(value)]="searchString" placeholder="Запрос по названию"></dx-text-box>
+                                <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
+                                <dx-tag-box [searchEnabled]="true"
+                                            [items]="allTypes"
+                                            [acceptCustomValue]="true"
+                                            [(value)]="selectedTypes"
+                                            (onSelectionChanged)="typeSelectionChanged($event)"
+                                            placeholder="Нужные типы">
+                                </dx-tag-box>
+                                <dx-tag-box [searchEnabled]="true"
+                                            [items]="allTypes"
+                                            [acceptCustomValue]="true"
+                                            [(value)]="ignoredTypes"
+                                            (onSelectionChanged)="ignoredTypeSelectionChanged($event)"
+                                            placeholder="Игнорировать типы"
+                                            style="margin-bottom:5px">
+                                </dx-tag-box>
+                                <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
+                                <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
+                                <div>
+                                    <span><input [(ngModel)]="useMapBounds"
+                                                 type="checkbox">Учитывать границы карты</span>
+                                    <span><input [(ngModel)]="showCurrentPosition"
+                                                 (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
+                                </div>
+                                <div style="margin-top: 5px;">
+                                    <button (click)="onSearchClick($event)">Найти</button>
+                                    <span style="margin-left:10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
+                                    <button (click)="onShowOnMapClick($event)">Показать на карте</button>
                                 </div>
 
-                            </dx-list>
+                            </div>
+
+                            <div class="filter-list" style="margin-top:5px; height: 100%">
+                                <dx-list #dataList
+                                         width="100%"
+                                         pageLoadMode="scrollBottom"
+                                         [indicateLoading]="true"
+                                         [searchEnabled]="true"
+                                         keyExpr="id"
+                                         searchExpr="name"
+                                         searchMode="contains"
+                                         selectionMode="all"
+                                         selectAllMode="allPages"
+                                         [showSelectionControls]="true"
+                                         [selectedItems]="selectedMapData"
+                                         (onSelectionChanged)="selectedMapDataChanged($event)"
+                                         [dataSource]="mapDataSource">
+                                    <div *dxTemplate="let item of 'item'" class="mapData">
+                                        <div style="overflow-wrap: anywhere; white-space: normal">{{item.name}}</div>
+                                        <div style="overflow-wrap: anywhere; white-space: normal">
+                            <span *ngFor="let mapPoints of item.data" class="label label-info"
+                                  style="margin-left: 1px;">{{mapPoints.type}}</span>
+                                        </div>
+                                    </div>
+
+                                </dx-list>
+                            </div>
                         </div>
                     </ng-container>
 
