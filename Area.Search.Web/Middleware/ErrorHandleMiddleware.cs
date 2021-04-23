@@ -28,6 +28,19 @@ namespace Area.Search.Web.Middleware
                 };
                 context.ExceptionHandled = true;
             }
+            else if (context.Exception != null)
+            {
+                context.Result = new ObjectResult(
+                    new
+                    {
+                        error = context.Exception.Message,
+                        description = context.Exception.ToString()
+                    })
+                {
+                    StatusCode = StatusCodes.Status400BadRequest
+                };
+                context.ExceptionHandled = true;
+            }
         }
     }
 }

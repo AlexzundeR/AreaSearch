@@ -42,7 +42,6 @@ namespace Area.Search.Web
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
                 app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions
                 {
                     HotModuleReplacement = true
@@ -50,7 +49,6 @@ namespace Area.Search.Web
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
             }
 
             app.UseStaticFiles();

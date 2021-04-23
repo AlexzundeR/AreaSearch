@@ -1,6 +1,12 @@
 ﻿<div class="map-page-container">
     <div class="filter-column">
         <div class="filter-container">
+            <div *ngIf="lastError">
+                <pre class="alert-danger">
+                    {{lastError.error}}
+                    {{lastError.description}}
+                </pre>
+            </div>
             <dx-tab-panel
                 #tabPanel
                 height="auto"
@@ -8,15 +14,15 @@
                 [dataSource]="[{id:'filter', text: 'Поиск'}, {id:'route',text:'Маршрут'}]"
                 [selectedIndex]="0"
                 [loop]="false"
-                [animationEnabled]="true"
-                [swipeEnabled]="true"
+                [animationEnabled]="false"
+                [swipeEnabled]="false"
             >
                 <div *dxTemplate="let tab of 'title'">
                     <span>{{tab.text}}</span>
                 </div>
                 <ng-container *dxTemplate="let tab of 'item'">
                     <ng-container *ngIf="tab.id === 'filter'">
-                        <div class="filter-controls">
+                        <div class="filter-controls" style="margin-top: 5px">
                             <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
                             <dx-text-box [(value)]="searchString" placeholder="Запрос по названию"></dx-text-box>
                             <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
@@ -37,11 +43,17 @@
                             </dx-tag-box>
                             <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
                             <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
-                            <button (click)="onSearchClick($event)">Найти</button>
-                            <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
-                            <span><input [(ngModel)]="showCurrentPosition" (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
-                            <span style="margin-left:10px">Найдено: {{mapData?.length || 0}}</span>
-                            <button (click)="onShowOnMapClick($event)">Показать на карте</button>
+                            <div>
+                                <span><input [(ngModel)]="useMapBounds" type="checkbox">Учитывать границы карты</span>
+                                <span><input [(ngModel)]="showCurrentPosition"
+                                             (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
+                            </div>
+                            <div style="margin-top: 5px;">
+                                <button (click)="onSearchClick($event)">Найти</button>
+                                <span style="margin-left:10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
+                                <button (click)="onShowOnMapClick($event)">Показать на карте</button>
+                            </div>
+
                         </div>
 
                         <div class="filter-list" style="margin-top:5px">

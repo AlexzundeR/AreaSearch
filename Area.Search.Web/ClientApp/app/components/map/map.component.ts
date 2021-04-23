@@ -11,7 +11,7 @@ import {DxMapComponent} from 'devextreme-angular/ui/map';
 import {StateService} from '../../services/state.service';
 import {MapMarker} from '../../models/map-marker.type';
 import {ChangeDetectorRef} from '@angular/core';
-import {RouteService} from "../../services/route.service";
+import {RouteService, ServiceError} from "../../services/route.service";
 import {Route, RoutePoint} from "../../models/route.type";
 import {RouteDrawingService} from "../../services/routeDrawing.service";
 import {Observable} from "rxjs/Observable";
@@ -47,6 +47,7 @@ export class MapComponent implements OnChanges {
     map: google.maps.Map;
     mapCenter: any;
     mapZoom: any;
+    lastError?: ServiceError = {error:"ERROR", description:"ERROR"};
 
     constructor(
         private mapService: MapService,
@@ -62,7 +63,17 @@ export class MapComponent implements OnChanges {
         this.mapService.allTypesObs.subscribe((types) => {
             this.allTypes = types.sort();
         });
-        this.routeDataSource = this.routeService.$routePoints.map(p=>p);
+        this.routeDataSource = this.routeService.$routePoints.map(p => p);
+
+        this.routeService.$errors.subscribe((error) => {
+            if (error.error === 'concurrent_access') {
+                if (confirm('Кто-то уже изменил маршрут. Загрузить изменения (ваши правки будут утеряны)?')){
+                    this.routeService.getRoute(1).then();
+                }
+            }else {
+                this.lastError = error;
+            }
+        });
     }
 
     onWindowResize() {
@@ -278,13 +289,14 @@ export class MapComponent implements OnChanges {
     }
 
     redrawRoute() {
+        this.lastError = undefined;
         if (this.showRoute) {
             this.routeService.getRoute(1).then();
         }
         this.routeDrawingService.setEnabled(this.showRoute);
     }
 
-    onShowCurrentPositionChanged(){
+    onShowCurrentPositionChanged() {
         this.routeDrawingService.setCurrentPositionShowEnabled(this.showCurrentPosition);
     }
 

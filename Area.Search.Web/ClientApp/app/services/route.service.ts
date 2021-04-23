@@ -1,8 +1,14 @@
 ﻿import {Injectable} from "@angular/core";
-import {Http} from "@angular/http";
+import {Http, Response} from "@angular/http";
 import {Coordinates, Route, RoutePoint} from "../models/route.type";
 import {Observable} from "rxjs/Observable";
 import {BehaviorSubject, Subject} from "rxjs/Rx";
+
+export class ServiceError {
+    error: string;
+    description: string;
+
+}
 
 @Injectable()
 export class RouteService {
@@ -15,6 +21,10 @@ export class RouteService {
         lastModificationDate: new Date(),
         name: ''
     });
+
+    private errorsSub: Subject<ServiceError> = new Subject<ServiceError>();
+
+    public $errors: Observable<ServiceError> = this.errorsSub;
 
     public $route: Observable<Route> = this.routeSub.map(r => {
         r.points.forEach((p, i) => p.pointId = i);
@@ -102,7 +112,18 @@ export class RouteService {
             .map(e => {
                 return e.json() as Route
             })
-            .toPromise();
+            .toPromise()
+            .catch((response: Response) => {
+                try {
+                    const error = response.json() as ServiceError;
+                    if (!error.error){
+                        error.error = `${response.status} ${response.statusText}`;
+                    }
+                    this.errorsSub.next(error);
+                } catch (ex) {
+                }
+                throw response;
+            });
 
         return this.route = updatedRoute;
     }

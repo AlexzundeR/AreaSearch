@@ -1,14 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <PropertyGroup>
+    <TrimUnusedDependencies>false</TrimUnusedDependencies>
+  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,20 +61,20 @@
     <Exec Command="node node_modules/webpack/bin/webpack.js" />
   </Target>
 
-  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
-    <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
-    <Exec Command="npm install" />
-    <Exec Command="node node_modules/webpack/bin/webpack.js --config webpack.config.vendor.js --env.prod" />
-    <Exec Command="node node_modules/webpack/bin/webpack.js --env.prod" />
+<!--  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">-->
+<!--    &lt;!&ndash; As part of publishing, ensure the JS resources are freshly built in production mode &ndash;&gt;-->
+<!--    <Exec Command="npm install" />-->
+<!--    <Exec Command="node node_modules/webpack/bin/webpack.js &#45;&#45;config webpack.config.vendor.js &#45;&#45;env.prod" />-->
+<!--    <Exec Command="node node_modules/webpack/bin/webpack.js &#45;&#45;env.prod" />-->
 
-    <!-- Include the newly-built files in the publish output -->
-    <ItemGroup>
-      <DistFiles Include="wwwroot\dist\**; ClientApp\dist\**" />
-      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
-        <RelativePath>%(DistFiles.Identity)</RelativePath>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ResolvedFileToPublish>
-    </ItemGroup>
-  </Target>
+<!--    &lt;!&ndash; Include the newly-built files in the publish output &ndash;&gt;-->
+<!--    <ItemGroup>-->
+<!--      <DistFiles Include="wwwroot\dist\**; ClientApp\dist\**" />-->
+<!--      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">-->
+<!--        <RelativePath>%(DistFiles.Identity)</RelativePath>-->
+<!--        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>-->
+<!--      </ResolvedFileToPublish>-->
+<!--    </ItemGroup>-->
+<!--  </Target>-->
 
 </Project>

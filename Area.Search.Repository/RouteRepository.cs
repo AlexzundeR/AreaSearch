@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,7 +57,8 @@ namespace Area.Search.Repository
                         @"
                         UPDATE ""Routes"" SET 
                             ""Name"" = @name,
-                            ""Points"" = @points :: json
+                            ""Points"" = @points :: json,
+                            ""LastModificationDate"" = now() at time zone 'utc'
                         WHERE ""Id"" = @route_id AND ""LastModificationDate"" = @last_modification_date
                         RETURNING
                             ""Id"",
@@ -72,6 +74,11 @@ namespace Area.Search.Repository
                             last_modification_date = routeToUpdateDb.LastModificationDate
                         },
                         cancellationToken: cancellationToken));
+
+                if (routeDb == null)
+                {
+                    throw new DBConcurrencyException();
+                }
 
                 return RouteDb.ToDomain(routeDb);
             }
