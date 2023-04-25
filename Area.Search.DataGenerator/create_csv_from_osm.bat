@@ -1,1 +1,1 @@
-﻿.\osmconvert.exe ru-mow.osm --csv="@oname @id type @lon @lat place highway natural historic sport leisure public_transport railway tourism military man_made waterway amenity landuse building name add:full old_name" -o="msk-names-2019.csv" --all-to-nodes
+﻿.\osmconvert.exe ru-mow.osm.pbf --csv="@oname @id type @lon @lat place highway natural historic sport leisure public_transport railway tourism military man_made waterway amenity landuse building name add:full old_name" -o="msk-names-2019.csv" --all-to-nodes

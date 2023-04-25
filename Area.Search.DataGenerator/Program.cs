@@ -16,9 +16,10 @@ namespace Area.Search.DataGenerator
 {
     internal class Program
     {
+        public const int Year = 2023;
         private static void Main(string[] args)
         {
-            var csvFileName = "msk-names-2021.csv";
+            var csvFileName = $"msk-names-{Year}.csv";
 
             var csvReader = new CsvReader(
                 new StreamReader(File.OpenRead(csvFileName)),
@@ -200,7 +201,7 @@ namespace Area.Search.DataGenerator
                             ContractResolver = new CamelCasePropertyNamesContractResolver()
                         });
 
-                    File.WriteAllText($"{col.type}-2021-{part}.json", collectionString);
+                    File.WriteAllText($"{col.type}-{Year}-{part}.json", collectionString);
 
                     from += by;
                     part++;
@@ -215,7 +216,7 @@ namespace Area.Search.DataGenerator
                         NullValueHandling = NullValueHandling.Ignore,
                         ContractResolver = new CamelCasePropertyNamesContractResolver()
                     });
-                File.WriteAllText($"{col.type}-types-2021.json", allTypesString);
+                File.WriteAllText($"{col.type}-types-{Year}.json", allTypesString);
 
                 Console.ReadLine();
             }

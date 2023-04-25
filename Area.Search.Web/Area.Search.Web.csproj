@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="ClientApp\app\static\all-2019.json" />
     <Content Include="ClientApp\app\static\all-types-2019.json" />
+    <Content Include="ClientApp\app\static\all-types-2023.json" />
   </ItemGroup>
 
   <ItemGroup>

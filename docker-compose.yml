@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  web:
+    image: "area-search"
+    ports:
+      - "5033:80"
+    environment: 
+        ASPNETCORE_ENVIRONMENT: Production
+    networks:
+        - local
+    depends_on:
+        - postgres
+  postgres:
+    image: "postgres"
+    ports:
+        - "6532:6532"
+    environment:
+        POSTGRES_PASSWORD: postgres
+    volumes:
+        - /var/local/data/area-search:/var/lib/postgresql/data
+    networks:
+        - local
+    command: -p 6532
+networks:
+    local:

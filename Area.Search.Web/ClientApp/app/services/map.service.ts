@@ -3,13 +3,8 @@ import { Observable } from "rxjs/Observable";
 import 'rxjs/Rx';
 import { MapData, MapDataPoint } from "../models/map-data.model";
 import { toObservable } from "@angular/forms/src/validators";
-//const allGeo1 = require('../static/all-2019-1.json');
-//const allGeo2 = require('../static/all-2019-2.json');
-//const allGeo3 = require('../static/all-2019-3.json');
-//const allGeo4 = require('../static/all-2019-4.json');
-//const allGeo5 = require('../static/all-2019-5.json');
-const allGeo = require('../static/all-2021.json');
-const allTypes = require('../static/all-types-2021.json');
+const allGeo = require('../static/all-2023.json');
+const allTypes = require('../static/all-types-2023.json');
 import { } from '@types/googlemaps';
 import { Http } from "@angular/http";
 import { BehaviorSubject } from "rxjs/Rx";
@@ -40,11 +35,6 @@ export class MapService {
     dataLoaded: boolean = false;
 
     geoData: MapData[] = [
-        //...allGeo1 as MapData[],
-        //...allGeo2 as MapData[],
-        //...allGeo3 as MapData[],
-        //...allGeo4 as MapData[],
-        //...allGeo5 as MapData[]
     ];
 
     private allTypesSubj: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
