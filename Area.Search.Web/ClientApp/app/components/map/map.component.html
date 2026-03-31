@@ -22,10 +22,10 @@
                 </div>
                 <ng-container *dxTemplate="let tab of 'item'">
                     <ng-container *ngIf="tab.id === 'filter'">
-                        <div style="height: 100%">
-                            <div class="filter-controls" style="margin-top: 5px;">
+                        <div style="height: 100%;display: flex;flex-direction: column;">
+                            <div class="filter-controls" style="margin-top: 5px;flex: 0 0 auto;">
                                 <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
-                                <dx-text-box [(value)]="searchString" placeholder="Запрос по названию"></dx-text-box>
+                                <dx-text-box [(value)]="searchString" (onValueChanged)="onSearchStringChanged($event)" placeholder="Запрос по названию"></dx-text-box>
                                 <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
                                 <dx-tag-box [searchEnabled]="true"
                                             [items]="allTypes"
@@ -42,13 +42,17 @@
                                             placeholder="Игнорировать типы"
                                             style="margin-bottom:5px">
                                 </dx-tag-box>
+                                
                                 <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
                                 <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
                                 <div>
                                     <span><input [(ngModel)]="useMapBounds"
-                                                 type="checkbox">Учитывать границы карты</span>
+                                                 type="checkbox" (ngModelChange)="onUseMapBoundsChanged()">Учитывать границы карты</span>
+                                    <span><input [(ngModel)]="useMapPolygon"
+                                                (ngModelChange)="onUseMapPolygonChanged()" type="checkbox">Учитывать фигуру</span>
                                     <span><input [(ngModel)]="showCurrentPosition"
                                                  (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
+                                    
                                 </div>
                                 <div style="margin-top: 5px;">
                                     <button (click)="onSearchClick($event)">Найти</button>
@@ -58,9 +62,10 @@
 
                             </div>
 
-                            <div class="filter-list" style="margin-top:5px; height: 100%">
+                            <div class="filter-list" style="margin-top:5px; flex: 1 1 auto;">
                                 <dx-list #dataList
                                          width="100%"
+                                         height="100%"
                                          pageLoadMode="scrollBottom"
                                          [indicateLoading]="true"
                                          [searchEnabled]="true"
@@ -142,7 +147,7 @@
         </div>
     </div>
     <div class="map-column">
-        <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31"
+        <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31&libraries=drawing"
                 #map
                 center="Moscow Russia"
                 [zoom]="10"

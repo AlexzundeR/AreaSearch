@@ -1,20 +1,20 @@
-import {Component, Input, OnChanges, SimpleChanges, ViewChild} from '@angular/core';
-import {MapData, MapDataPoint} from '../../models/map-data.model';
-import {} from '@types/googlemaps';
-import {MapService} from '../../services/map.service';
-import {DxListComponent} from 'devextreme-angular/ui/list';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { MapData, MapDataPoint } from '../../models/map-data.model';
+import { } from '@types/googlemaps';
+import { MapService } from '../../services/map.service';
+import { DxListComponent } from 'devextreme-angular/ui/list';
 import DataSource from 'devextreme/data/data_source';
 import ArrayStore from 'devextreme/data/array_store';
-import {DxMapComponent} from 'devextreme-angular/ui/map';
+import { DxMapComponent } from 'devextreme-angular/ui/map';
 //import { forEach } from '@angular/router/src/utils/collection';
 
-import {StateService} from '../../services/state.service';
-import {MapMarker} from '../../models/map-marker.type';
-import {ChangeDetectorRef} from '@angular/core';
-import {RouteService, ServiceError} from "../../services/route.service";
-import {Route, RoutePoint} from "../../models/route.type";
-import {RouteDrawingService} from "../../services/routeDrawing.service";
-import {Observable} from "rxjs/Observable";
+import { StateService } from '../../services/state.service';
+import { MapMarker } from '../../models/map-marker.type';
+import { ChangeDetectorRef } from '@angular/core';
+import { RouteService, ServiceError } from "../../services/route.service";
+import { Route, RoutePoint } from "../../models/route.type";
+import { RouteDrawingService } from "../../services/routeDrawing.service";
+import { Observable } from "rxjs/Observable";
 
 
 @Component({
@@ -23,6 +23,9 @@ import {Observable} from "rxjs/Observable";
     styleUrls: ['./map.component.css']
 })
 export class MapComponent implements OnChanges {
+
+    polygon: any;
+
     mapData: MapData[] = [];
     mapDataSource: MapData[] = [];
     allTypes: string[] = [];
@@ -36,6 +39,7 @@ export class MapComponent implements OnChanges {
     routeDataSource: Observable<RoutePoint[]>;
 
     defaultCenter = [55.7558, 37.6173];
+    @Input() useMapPolygon: boolean = true;
     @Input() useMapBounds: boolean = true;
     @Input() showCurrentPosition: boolean = false;
     @Input() showRoute: boolean = true;
@@ -47,7 +51,9 @@ export class MapComponent implements OnChanges {
     map: google.maps.Map;
     mapCenter: any;
     mapZoom: any;
-    lastError?: ServiceError = {error:"ERROR", description:"ERROR"};
+    lastError?: ServiceError = { error: "ERROR", description: "ERROR" };
+    drawingManager: google.maps.drawing.DrawingManager;
+    initialPolygonPoints: number[][] = [];
 
     constructor(
         private mapService: MapService,
@@ -67,10 +73,10 @@ export class MapComponent implements OnChanges {
 
         this.routeService.$errors.subscribe((error) => {
             if (error.error === 'concurrent_access') {
-                if (confirm('Кто-то уже изменил маршрут. Загрузить изменения (ваши правки будут утеряны)?')){
+                if (confirm('Кто-то уже изменил маршрут. Загрузить изменения (ваши правки будут утеряны)?')) {
                     this.routeService.getRoute(1).then();
                 }
-            }else {
+            } else {
                 this.lastError = error;
             }
         });
@@ -78,9 +84,9 @@ export class MapComponent implements OnChanges {
 
     onWindowResize() {
         if (this.map && window.innerWidth < 769) {
-            this.map.setOptions({gestureHandling: 'cooperative'});
+            this.map.setOptions({ gestureHandling: 'cooperative' });
         } else {
-            this.map.setOptions({gestureHandling: 'greedy'});
+            this.map.setOptions({ gestureHandling: 'greedy' });
         }
     }
 
@@ -114,24 +120,31 @@ export class MapComponent implements OnChanges {
                     this.ignoredTypes = [];
                 }
             }
-            if (state.useBoundaries) {
+            if (state.useBoundaries != null) {
                 this.useMapBounds = state.useBoundaries;
             }
             if (state.selectedMapData) {
-                this.selectedMapData = state.selectedMapData.map((e: any) => this.mapData.find(d => d.id == e.id));
+                this.selectedMapData = state.selectedMapData.filter((e: any) => e).map((e: any) => this.mapData.find(d => d.id == e.id));
+            }
+            if (state.usePolygon != null) {
+                this.useMapPolygon = state.usePolygon;
+                this.refreshDrawingTools()
+            }
+            if (state.polygon) {
+                this.initialPolygonPoints = state.polygon;
             }
         }
         this.redrawRoute();
         this.updateDataSource();
     }
 
-
-    typeSelectionChanged() {
-        //this.typeString = this.selectedTypes.join(' ');
+    onSearchStringChanged(e: any) {
     }
 
-    ignoredTypeSelectionChanged() {
-        //this.ignoreTypeString = this.ignoredTypes.join(' ');
+    typeSelectionChanged(e: any) {
+    }
+
+    ignoredTypeSelectionChanged(e: any) {
     }
 
     mapDataSelectionChanged(event: { selectedItem: MapData }) {
@@ -151,6 +164,101 @@ export class MapComponent implements OnChanges {
         this.onWindowResize();
 
         this.routeDrawingService.setMap(this.map);
+
+        this.drawingManager = new google.maps.drawing.DrawingManager({
+            drawingMode: null,
+            drawingControl: true,
+            drawingControlOptions: {
+                position: google.maps.ControlPosition.TOP_CENTER,
+                drawingModes: [
+                    google.maps.drawing.OverlayType.POLYGON,
+                ],
+            }
+        })
+        this.refreshDrawingTools();
+
+        this.drawingManager.addListener('overlaycomplete', (e) => { this.drawingPolygonCompleted(e) });
+
+        if (this.initialPolygonPoints && this.initialPolygonPoints.length) {
+            this.redrawPolygon(this.initialPolygonPoints.map((e: number[]) => { return new google.maps.LatLng(e[0], e[1]) }));
+        }
+    }
+
+    refreshDrawingTools() {
+        if (!this.drawingManager) {
+            return;
+        }
+
+        if (this.useMapPolygon) {
+            this.drawingManager.setMap(this.map);
+        } else {
+            this.drawingManager.setMap(null);
+        }
+    }
+
+    drawingPolygonCompleted(event: any) {
+        var poly = event.overlay.getPath();
+        if (event.type == 'polygon') {
+            // hide polygon from DrawingManager
+            event.overlay.setMap(null);
+
+            this.redrawPolygon(event.overlay.getPath().getArray());
+            this.onSearchClick();
+        }
+    }
+
+    redrawPolygon(points?: google.maps.LatLng[]) {
+        if (this.polygon) {
+            this.polygon.setMap(null);
+        }
+
+        if (!points && !this.polygon) {
+            return;
+        }
+
+        //console.log(event.overlay.getPath().getArray());
+        this.polygon = new google.maps.Polygon({
+            paths: points || this.polygon.getPath(),
+            strokeColor: '#0000FF',
+            strokeOpacity: 0.8,
+            strokeWeight: 3,
+            fillColor: '#0000FF',
+            fillOpacity: 0.35,
+            editable: true
+        });
+
+        this.drawingManager.setDrawingMode(null);
+
+        if (!this.useMapPolygon) {
+            return;
+        }
+
+        this.polygon.setMap(this.map);
+
+        var path = this.polygon.getPath();
+
+        google.maps.event.addListener(this.polygon, "dblclick", (event: any) => {
+            if (event.vertex && this.polygon.getPath().length > 3) {
+                this.polygon.getPath().removeAt(event.vertex);
+            } else {
+                this.polygon.setMap(null);
+                this.polygon = null;
+
+                this.onSearchClick();
+            }
+        });
+
+        google.maps.event.addListener(path, "insert_at", () => {
+            this.onSearchClick();
+        });
+        google.maps.event.addListener(path, "set_at", () => {
+            this.onSearchClick();
+        });
+        google.maps.event.addListener(path, "remove_at", () => {
+            this.onSearchClick();
+        });
+
+
     }
 
 
@@ -158,6 +266,9 @@ export class MapComponent implements OnChanges {
         this.mapCenter = (this.map as google.maps.Map).getCenter();
         this.mapZoom = (this.map as google.maps.Map).getZoom();
         this.updateState();
+        if (this.useMapBounds && !this.useMapPolygon) {
+            this.onSearchClick();
+        }
     }
 
     selectedMapDataChanged(e: any) {
@@ -188,8 +299,16 @@ export class MapComponent implements OnChanges {
         });
 
         this.mapMarkers = points.map(p => {
-            return new MapMarker(p.point, {text: `${p.d.name} ${p.p.bigType}|${p.p.type}`});
+            return new MapMarker(p.point, { text: `${p.d.name} ${p.p.bigType}|${p.p.type}` });
         });
+    }
+
+    filterPointByPolygon(p: number[]) {
+        if (!this.polygon) {
+            return true;
+        }
+
+        return google.maps.geometry.poly.containsLocation(new google.maps.LatLng(p[0], p[1]), this.polygon);
     }
 
     markerAdded(event: any) {
@@ -217,28 +336,49 @@ export class MapComponent implements OnChanges {
     onSearchClick() {
 
         this.listIndicateLoading(true);
+        var mapBounds: { ne: google.maps.LatLng, sw: google.maps.LatLng } | null = null;
+        var filterigCallback: ((p: number[]) => boolean) | null = null;
         if (this.useMapBounds) {
-            var bounds = (this.map as google.maps.Map).getBounds();
+            let bounds = (this.map as google.maps.Map).getBounds();
             if (bounds == null) return;
             var ne = bounds.getNorthEast(); // LatLng of the north-east corner
             var sw = bounds.getSouthWest();
-            this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes, {ne: ne, sw: sw})
-                .then((data) => {
-                    this.mapData = data;
-                    this.updateDataSource();
-                    this.listIndicateLoading(false);
-                    this.updateState();
-                });
-        } else {
-            this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes)
-                .then((data) => {
-                    this.mapData = data;
-                    this.updateDataSource();
-                    this.listIndicateLoading(false);
-                    this.updateState();
-                });
-
+            mapBounds = { ne: ne, sw: sw };
         }
+
+        if (this.useMapPolygon) {
+            filterigCallback = this.filterPointByPolygon.bind(this);
+            if (this.polygon) {
+                let bounds = new google.maps.LatLngBounds();
+                this.polygon.getPath().forEach(function (latlng: any) {
+                    bounds.extend(latlng);
+                });
+                var ne = bounds.getNorthEast(); // LatLng of the north-east corner
+                var sw = bounds.getSouthWest();
+                mapBounds = { ne: ne, sw: sw };
+            }
+        }
+
+        this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes, mapBounds, filterigCallback)
+            .then((data) => {
+                this.mapData = data;
+                this.updateDataSource();
+                this.listIndicateLoading(false);
+                this.updateState();
+
+                if (this.mapData) {
+                    var newTypes = new Set<string>();
+                    this.mapData.forEach(e => {
+                        if (e.data) {
+                            e.data.forEach(d => {
+                                newTypes.add(d.type);
+                            });
+                        }
+                    });
+                    this.allTypes = Array.from(newTypes);
+                }
+
+            });
     }
 
     updateDataSource() {
@@ -254,7 +394,9 @@ export class MapComponent implements OnChanges {
             typeString: JSON.stringify(this.selectedTypes),
             ignoreTypeString: JSON.stringify(this.ignoredTypes),
             useBoundaries: this.useMapBounds,
-            selectedMapData: this.selectedMapData
+            selectedMapData: this.selectedMapData,
+            usePolygon: this.useMapPolygon,
+            polygon: this.polygon ? this.polygon.getPath().getArray().map((e: any) => { return [e.lat(), e.lng()] }) : null
         })
     }
 
@@ -296,6 +438,16 @@ export class MapComponent implements OnChanges {
         this.routeDrawingService.setEnabled(this.showRoute);
     }
 
+    onUseMapPolygonChanged() {
+        this.refreshDrawingTools();
+        this.redrawPolygon();
+        this.onSearchClick();
+    }
+
+    onUseMapBoundsChanged() {
+        this.onSearchClick();
+    }
+
     onShowCurrentPositionChanged() {
         this.routeDrawingService.setCurrentPositionShowEnabled(this.showCurrentPosition);
     }
@@ -309,7 +461,7 @@ export class MapComponent implements OnChanges {
         if (point.name === newValue) {
             return;
         }
-        this.routeService.setPoint(point, {name: newValue} as RoutePoint);
+        this.routeService.setPoint(point, { name: newValue } as RoutePoint);
     }
 
     pointDescriptionChanged($event: any, point: RoutePoint) {
@@ -317,6 +469,6 @@ export class MapComponent implements OnChanges {
         if (point.description === newValue) {
             return;
         }
-        this.routeService.setPoint(point, {description: newValue} as RoutePoint);
+        this.routeService.setPoint(point, { description: newValue } as RoutePoint);
     }
 }

@@ -43,7 +43,7 @@ export class MapService {
     }
     allTypes: string[] = allTypes as string[];
 
-    mapDataQuery(searchString: string, selectedTypes: string[], ignoredTypes: string[], mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng }): Promise<MapData[]> {
+    mapDataQuery(searchString: string, selectedTypes: string[], ignoredTypes: string[], mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng } | null, shapeContainsCallback?: ((p: number[]) => boolean) | null): Promise<MapData[]> {
         var mapData = this.geoData;
         return new Promise((res) => {
             var regexp = new RegExp(searchString, 'ig');
@@ -54,13 +54,21 @@ export class MapService {
 
             mapData = mapData.map(d => {
                 var filteredData = d.data;
-                if (!filteredData || !filteredData.length){
+                if (!filteredData || !filteredData.length) {
                     return null;
                 }
                 if (mapBounds) {
-                    filteredData = filteredData.filter(e => e.points && e.points.some(p => p[0] < mapBounds.ne.lat() && p[1] < mapBounds.ne.lng() && p[0] > mapBounds.sw.lat() && p[1] > mapBounds.sw.lng()));
+                    var filterImpl = (p:number[])=> p[0] < mapBounds.ne.lat() && p[1] < mapBounds.ne.lng() && p[0] > mapBounds.sw.lat() && p[1] > mapBounds.sw.lng(); 
+                    filteredData = filteredData.filter(e => e.points && e.points.some(filterImpl));
+                    filteredData = this.mapDataPointsWithFilter(filteredData, filterImpl);
                 }
-                if (!filteredData.length){
+
+                if (shapeContainsCallback) {
+                    filteredData = filteredData.filter(e => e.points && e.points.some(shapeContainsCallback));
+                    filteredData = this.mapDataPointsWithFilter(filteredData, shapeContainsCallback);
+                }
+
+                if (!filteredData.length) {
                     return null;
                 }
                 var hasType = true;
@@ -68,7 +76,7 @@ export class MapService {
                     hasType = filteredData.some(e => selectedTypes.some(p => p === e.type));
                 }
 
-                if (!hasType){
+                if (!hasType) {
                     return null;
                 }
 
@@ -92,5 +100,15 @@ export class MapService {
 
     getAllTypes() {
         return this.allTypes;
+    }
+
+    mapDataPointsWithFilter(filteredData: MapDataPoint[], filter: (p: number[]) => boolean) {
+        return filteredData.map(e => {
+            return {
+                type: e.type,
+                bigType: e.bigType,
+                points: e.points ? e.points.filter(filter) : null
+            } as MapDataPoint
+        })
     }
 }
