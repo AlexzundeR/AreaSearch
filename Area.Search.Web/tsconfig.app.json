@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": ["google.maps", "node"]
+  },
+  "files": [
+    "ClientApp/main.ts"
+  ],
+  "include": [
+    "ClientApp/**/*.d.ts"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-dotnet",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/Area.Search.Web/Area.Search.Web.csproj",
+                "--configuration",
+                "Debug"
+            ],
+            "type": "process",
+            "problemMatcher": "$msCompile",
+            "group": "build"
+        },
+        {
+            "label": "npm: start",
+            "type": "npm",
+            "script": "start",
+            "isBackground": true,
+            "problemMatcher": "$gulp-pattern-sass",
+            "options": {
+                "cwd": "${workspaceFolder}/Area.Search.Web"
+            }
+        },
+        {
+            "label": "npm: build",
+            "type": "npm",
+            "script": "build",
+            "args": ["--", "--configuration", "development"],
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}/Area.Search.Web"
+            }
+        },
+        {
+            "label": "Kill Node.js",
+            "command": "taskkill",
+            "args": ["/IM", "node.exe", "/F"],
+            "type": "process",
+            "problemMatcher": []
+        }
+    ]
+}

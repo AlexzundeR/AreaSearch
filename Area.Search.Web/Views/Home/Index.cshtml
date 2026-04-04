@@ -1,7 +1,6 @@
 <app></app>
 
-<script src="~/dist/vendor.js" asp-append-version="true"></script>
-
-@section scripts {
-    <script src="~/dist/main-client.js" asp-append-version="true"></script>
-}
+<script src="@AssetHelper.GetHashedAssetPath("dist/runtime.js")"></script>
+<script src="@AssetHelper.GetHashedAssetPath("dist/polyfills.js")"></script>
+<script src="@AssetHelper.GetHashedAssetPath("dist/scripts.js")"></script>
+<script src="@AssetHelper.GetHashedAssetPath("dist/main.js")"></script>

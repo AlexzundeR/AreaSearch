@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (web)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-dotnet",
+            "program": "${workspaceFolder}/Area.Search.Web/bin/Debug/net8.0/Area.Search.Web.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Area.Search.Web",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5000"
+            },
+            "justMyCode": false,
+            "sourceFileMap": {
+                "C:/projects/area-search/area-search-web": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Angular",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
+            "cwd": "${workspaceFolder}/Area.Search.Web",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4200",
+            "webRoot": "${workspaceFolder}/Area.Search.Web/ClientApp",
+            "sourceMaps": true
+        }
+    ]
+}

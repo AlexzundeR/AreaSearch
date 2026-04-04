@@ -1,18 +1,18 @@
-﻿import {Injectable} from "@angular/core";
-import {Http, Response} from "@angular/http";
-import {Coordinates, Route, RoutePoint} from "../models/route.type";
-import {Observable} from "rxjs/Observable";
-import {BehaviorSubject, Subject} from "rxjs/Rx";
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { Coordinates, Route, RoutePoint } from "../models/route.type";
+import { Observable, BehaviorSubject, Subject, map, shareReplay, skipWhile, combineLatest } from "rxjs";
 
 export class ServiceError {
-    error: string;
-    description: string;
-
+    error!: string;
+    description!: string;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class RouteService {
-    public constructor(private http: Http) {
+    public constructor(private http: HttpClient) {
     }
 
     private routeSub: BehaviorSubject<Route> = new BehaviorSubject<Route>({
@@ -26,15 +26,17 @@ export class RouteService {
 
     public $errors: Observable<ServiceError> = this.errorsSub;
 
-    public $route: Observable<Route> = this.routeSub.map(r => {
-        r.points.forEach((p, i) => p.pointId = i);
-        return r;
-    });
+    public $route: Observable<Route> = this.routeSub.pipe(
+        map(r => {
+            r.points.forEach((p, i) => p.pointId = i);
+            return r;
+        })
+    );
 
-
-    private previousPoints: RoutePoint[];
-    public $routePoints: Observable<RoutePoint[]> = this.routeSub.shareReplay()
-        .skipWhile((newRoute) => {
+    private previousPoints?: RoutePoint[];
+    public $routePoints: Observable<RoutePoint[]> = this.routeSub.pipe(
+        shareReplay(),
+        skipWhile((newRoute) => {
             if (!this.previousPoints) {
                 this.previousPoints = newRoute.points;
                 return false;
@@ -58,8 +60,9 @@ export class RouteService {
             }
             this.previousPoints = newRoute.points;
             return !isChanged;
-        })
-        .map(r => r.points);
+        }),
+        map(r => r.points)
+    );
 
 
     get route(): Route {
@@ -86,36 +89,22 @@ export class RouteService {
     }
 
     public async getRoute(routeId: number): Promise<Route> {
-        // var route = {
-        //     routeId: routeId,
-        //     name: "test",
-        //     points: []
-        // };
-        //
-        // this.route = route;
-        //
-        // return route;
-
-        const newRoute = await this.http.get("/api/route", {
+        const newRoute = await this.http.get<Route>("/api/route", {
             params: {routeId: routeId}
-        })
-            .map(e => e.json() as Route)
-            .toPromise();
+        }).toPromise();
 
-        return this.route = newRoute;
+        if (newRoute) {
+            this.route = newRoute;
+        }
+        return this.route;
     }
 
     public async updateRoute(route: Route) {
-        // return route;
-
-        const updatedRoute = await this.http.post("/api/route", route)
-            .map(e => {
-                return e.json() as Route
-            })
+        const updatedRoute = await this.http.post<Route>("/api/route", route)
             .toPromise()
-            .catch((response: Response) => {
+            .catch((response: HttpErrorResponse) => {
                 try {
-                    const error = response.json() as ServiceError;
+                    const error = response.error as ServiceError;
                     if (!error.error){
                         error.error = `${response.status} ${response.statusText}`;
                     }
@@ -125,7 +114,10 @@ export class RouteService {
                 throw response;
             });
 
-        return this.route = updatedRoute;
+        if (updatedRoute) {
+            this.route = updatedRoute;
+        }
+        return this.route;
     }
 
     setPoint(point: RoutePoint, newPointValues: RoutePoint) {

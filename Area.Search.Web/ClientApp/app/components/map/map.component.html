@@ -81,7 +81,7 @@
                                     <div *dxTemplate="let item of 'item'" class="mapData">
                                         <div style="overflow-wrap: anywhere; white-space: normal">{{item.name}}</div>
                                         <div style="overflow-wrap: anywhere; white-space: normal">
-                            <span *ngFor="let mapPoints of item.data" class="label label-info"
+                            <span *ngFor="let mapPoints of item.data" class="badge badge-info"
                                   style="margin-left: 1px;">{{mapPoints.type}}</span>
                                         </div>
                                     </div>
@@ -147,9 +147,9 @@
         </div>
     </div>
     <div class="map-column">
-        <dx-map key="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31&libraries=drawing"
+        <dx-map apiKey="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31&libraries=drawing"
                 #map
-                center="Moscow Russia"
+                [center]="[55.7558, 37.6173]"
                 [zoom]="10"
                 height="100%"
                 width="100%"

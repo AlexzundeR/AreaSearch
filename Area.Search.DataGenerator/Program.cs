@@ -16,20 +16,21 @@ namespace Area.Search.DataGenerator
 {
     internal class Program
     {
-        public const int Year = 2023;
+        public const int Year = 2026;
         private static void Main(string[] args)
         {
             var csvFileName = $"msk-names-{Year}.csv";
 
             var csvReader = new CsvReader(
                 new StreamReader(File.OpenRead(csvFileName)),
-                new Configuration()
+                new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
                     Encoding = Encoding.UTF8,
-                    IgnoreQuotes = true,
+                    Quote = ']',
+                    Mode = CsvMode.NoEscape,
+                    //IgnoreQuotes = true,
                     HasHeaderRecord = false,
                     Delimiter = "\t",
-                    CultureInfo = CultureInfo.InvariantCulture
                 });
 
             var columns = new[]
@@ -81,7 +82,7 @@ namespace Area.Search.DataGenerator
 
                 if (!result)
                 {
-                    Console.WriteLine($"Break on {csvReader.Context.CurrentIndex} line");
+                    Console.WriteLine($"Break on {csvReader.Context.Reader.CurrentIndex} line");
 
                     break;
                 }

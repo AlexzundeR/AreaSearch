@@ -185,6 +185,12 @@ orleans.codegen.cs
 
 /node_modules
 
+# Angular
+.angular/
+dist/
+tmp/
+.angular-cache/
+
 /yarn.lock
 
 # RIA/Silverlight projects

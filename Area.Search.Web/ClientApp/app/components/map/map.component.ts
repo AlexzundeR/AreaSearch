@@ -1,21 +1,16 @@
 import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { MapData, MapDataPoint } from '../../models/map-data.model';
-import { } from '@types/googlemaps';
 import { MapService } from '../../services/map.service';
-import { DxListComponent } from 'devextreme-angular/ui/list';
+import { DxListModule } from 'devextreme-angular/ui/list';
 import DataSource from 'devextreme/data/data_source';
 import ArrayStore from 'devextreme/data/array_store';
-import { DxMapComponent } from 'devextreme-angular/ui/map';
-//import { forEach } from '@angular/router/src/utils/collection';
-
+import { DxMapModule } from 'devextreme-angular/ui/map';
 import { StateService } from '../../services/state.service';
 import { MapMarker } from '../../models/map-marker.type';
-import { ChangeDetectorRef } from '@angular/core';
 import { RouteService, ServiceError } from "../../services/route.service";
 import { Route, RoutePoint } from "../../models/route.type";
 import { RouteDrawingService } from "../../services/routeDrawing.service";
-import { Observable } from "rxjs/Observable";
-
+import { Observable, map } from "rxjs";
 
 @Component({
     selector: 'map',
@@ -30,8 +25,6 @@ export class MapComponent implements OnChanges {
     mapDataSource: MapData[] = [];
     allTypes: string[] = [];
     @Input() searchString: string = "";
-    // @Input() typeString: string = "";
-    // @Input() ignoreTypeString: string = "";
     selectedTypes: string[] = [];
     ignoredTypes: string[] = [];
     mapMarkers: MapMarker[] = [];
@@ -45,22 +38,21 @@ export class MapComponent implements OnChanges {
     @Input() showRoute: boolean = true;
     @Input() selectedMapData: MapData[] = [];
     @Input() selectedPoints: RoutePoint[] = [];
-    @ViewChild('routeList') routeList: DxListComponent;
-    @ViewChild('dataList') dataList: DxListComponent;
-    @ViewChild('map') mapControl: DxMapComponent;
-    map: google.maps.Map;
-    mapCenter: any;
-    mapZoom: any;
+    @ViewChild('routeList') routeList: any;
+    @ViewChild('dataList') dataList: any;
+    @ViewChild('map') mapControl!: any;
+    map!: google.maps.Map;
+    mapCenter!: any;
+    mapZoom!: any;
     lastError?: ServiceError = { error: "ERROR", description: "ERROR" };
-    drawingManager: google.maps.drawing.DrawingManager;
+    drawingManager!: google.maps.drawing.DrawingManager;
     initialPolygonPoints: number[][] = [];
 
     constructor(
         private mapService: MapService,
         private stateService: StateService,
         private routeService: RouteService,
-        private routeDrawingService: RouteDrawingService,
-        private changesDetector: ChangeDetectorRef) {
+        private routeDrawingService: RouteDrawingService) {
 
         this.mapChanged = this.mapChanged.bind(this);
         this.onWindowResize = this.onWindowResize.bind(this);
@@ -69,7 +61,7 @@ export class MapComponent implements OnChanges {
         this.mapService.allTypesObs.subscribe((types) => {
             this.allTypes = types.sort();
         });
-        this.routeDataSource = this.routeService.$routePoints.map(p => p);
+        this.routeDataSource = this.routeService.$routePoints.pipe(map(p => p));
 
         this.routeService.$errors.subscribe((error) => {
             if (error.error === 'concurrent_access') {
@@ -100,7 +92,9 @@ export class MapComponent implements OnChanges {
         var state = this.stateService.loadState();
         if (state) {
             this.mapData = state.mapData;
-            this.mapControl.center = state.center || this.defaultCenter;
+            if (this.mapControl) {
+                this.mapControl.center = state.center || this.defaultCenter;
+            }
             this.mapCenter = state.center || this.defaultCenter;
             this.mapZoom = state.zoom;
             if (state.searchString) {
@@ -165,19 +159,21 @@ export class MapComponent implements OnChanges {
 
         this.routeDrawingService.setMap(this.map);
 
-        this.drawingManager = new google.maps.drawing.DrawingManager({
-            drawingMode: null,
-            drawingControl: true,
-            drawingControlOptions: {
-                position: google.maps.ControlPosition.TOP_CENTER,
-                drawingModes: [
-                    google.maps.drawing.OverlayType.POLYGON,
-                ],
-            }
-        })
-        this.refreshDrawingTools();
+        if (google.maps.drawing) {
+            this.drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null,
+                drawingControl: true,
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [
+                        google.maps.drawing.OverlayType.POLYGON,
+                    ],
+                }
+            })
+            this.refreshDrawingTools();
 
-        this.drawingManager.addListener('overlaycomplete', (e) => { this.drawingPolygonCompleted(e) });
+            this.drawingManager.addListener('overlaycomplete', (e: any) => { this.drawingPolygonCompleted(e) });
+        }
 
         if (this.initialPolygonPoints && this.initialPolygonPoints.length) {
             this.redrawPolygon(this.initialPolygonPoints.map((e: number[]) => { return new google.maps.LatLng(e[0], e[1]) }));
@@ -199,7 +195,6 @@ export class MapComponent implements OnChanges {
     drawingPolygonCompleted(event: any) {
         var poly = event.overlay.getPath();
         if (event.type == 'polygon') {
-            // hide polygon from DrawingManager
             event.overlay.setMap(null);
 
             this.redrawPolygon(event.overlay.getPath().getArray());
@@ -216,7 +211,6 @@ export class MapComponent implements OnChanges {
             return;
         }
 
-        //console.log(event.overlay.getPath().getArray());
         this.polygon = new google.maps.Polygon({
             paths: points || this.polygon.getPath(),
             strokeColor: '#0000FF',
@@ -257,10 +251,7 @@ export class MapComponent implements OnChanges {
         google.maps.event.addListener(path, "remove_at", () => {
             this.onSearchClick();
         });
-
-
     }
-
 
     mapChanged() {
         this.mapCenter = (this.map as google.maps.Map).getCenter();
@@ -276,7 +267,6 @@ export class MapComponent implements OnChanges {
         (e.addedItems as MapData[]).filter(d => newData.every(p => p.id != d.id)).forEach(e => {
             newData.push(e);
         });
-        //this.changesDetector.detectChanges();
         this.selectedMapData = newData;
         this.updateState();
     }
@@ -318,18 +308,17 @@ export class MapComponent implements OnChanges {
             event.options.toggleInfoWindow();
             console.log(event);
         });
-        var that = this;
-        google.maps.event.addListener(event.originalMarker, "dblclick", function (args: any) {
-
-        });
     }
 
     listIndicateLoading(loading: boolean) {
         if (loading) {
-            (this.dataList.instance as any)._scrollView.startLoading()
-            //(this.dataList.instance as any)._dataSourceLoadingChangedHandler(loading);
+            if (this.dataList && this.dataList.instance) {
+                (this.dataList.instance as any)._scrollView.startLoading()
+            }
         } else {
-            (this.dataList.instance as any)._scrollView.finishLoading()
+            if (this.dataList && this.dataList.instance) {
+                (this.dataList.instance as any)._scrollView.finishLoading()
+            }
         }
     }
 
@@ -341,7 +330,7 @@ export class MapComponent implements OnChanges {
         if (this.useMapBounds) {
             let bounds = (this.map as google.maps.Map).getBounds();
             if (bounds == null) return;
-            var ne = bounds.getNorthEast(); // LatLng of the north-east corner
+            var ne = bounds.getNorthEast();
             var sw = bounds.getSouthWest();
             mapBounds = { ne: ne, sw: sw };
         }
@@ -353,7 +342,7 @@ export class MapComponent implements OnChanges {
                 this.polygon.getPath().forEach(function (latlng: any) {
                     bounds.extend(latlng);
                 });
-                var ne = bounds.getNorthEast(); // LatLng of the north-east corner
+                var ne = bounds.getNorthEast();
                 var sw = bounds.getSouthWest();
                 mapBounds = { ne: ne, sw: sw };
             }
@@ -401,13 +390,13 @@ export class MapComponent implements OnChanges {
     }
 
     onAddRoutePointClick() {
-        const center = this.map ? this.map.getCenter() : new google.maps.LatLng(55.7558, 37.613);
+        const mapCenter = this.map ? this.map.getCenter() : new google.maps.LatLng(55.7558, 37.613);
 
         const newPoint = {
             name: '',
             coordinates: {
-                lng: center.lng(),
-                lat: center.lat()
+                lng: mapCenter!.lng(),
+                lat: mapCenter!.lat()
             },
             routeId: this.routeService.route.routeId
         } as RoutePoint;
@@ -426,7 +415,6 @@ export class MapComponent implements OnChanges {
         (e.addedItems as RoutePoint[]).filter(d => newData.every(p => p.pointId != d.pointId)).forEach(e => {
             newData.push(e);
         });
-        //this.changesDetector.detectChanges();
         this.selectedPoints = newData;
     }
 

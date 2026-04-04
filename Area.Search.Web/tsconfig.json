@@ -1,17 +1,24 @@
 {
   "compilerOptions": {
-    "module": "es2015",
+    "module": "ES2022",
     "moduleResolution": "node",
-    "target": "es5",
+    "target": "ES2022",
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true, // Workaround for https://github.com/angular/angular/issues/17863. Remove this if you upgrade to a fixed version of Angular.
+    "skipLibCheck": true,
     "strict": true,
-    "lib": [ "es6", "dom" ],
-    "types": [ "webpack-env", "googlemaps" ]
+    "lib": ["ES2022", "dom"],
+    "types": ["google.maps", "node"],
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@angular/*": ["node_modules/@angular/*"]
+    }
   },
-  "exclude": [ "bin", "node_modules" ],
-  "atom": { "rewriteTsconfig": false }
+  "include": ["ClientApp/**/*"],
+  "exclude": ["node_modules", "bin", "obj"]
 }

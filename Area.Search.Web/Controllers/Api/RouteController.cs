@@ -29,6 +29,7 @@ namespace Area.Search.Web.Controllers.Api
         [HttpGet("")]
         public async Task<Route> GetRoute([FromQuery] long routeId, CancellationToken cancellationToken)
         {
+            Console.WriteLine("Rote getter");
             return await _getRouteService.GetRoute(routeId, cancellationToken);
         }
 

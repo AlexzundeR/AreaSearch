@@ -1,47 +1,38 @@
-﻿import { Injectable } from "@angular/core";
-import { Observable } from "rxjs/Observable";
-import 'rxjs/Rx';
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable, BehaviorSubject } from "rxjs";
 import { MapData, MapDataPoint } from "../models/map-data.model";
-import { toObservable } from "@angular/forms/src/validators";
-const allGeo = require('../static/all-2023.json');
-const allTypes = require('../static/all-types-2023.json');
-import { } from '@types/googlemaps';
-import { Http } from "@angular/http";
-import { BehaviorSubject } from "rxjs/Rx";
 
-
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class MapService {
 
+    constructor(private http: HttpClient) {
+        this.loadData();
+    }
 
+    private loadData() {
+        this.http.get<MapData[]>('/dist/data/all-2023.json').subscribe(data => {
+            this.geoData = data;
+            this.dataLoaded = true;
+        });
 
-    constructor(http: Http) {
-        http.get(allGeo as string)
-            .map(res => {
-                return res.json() as MapData[];
-            }).toPromise().then(e => {
-                this.dataLoaded = true;
-                this.geoData = e;
-            });
-
-        http.get(allTypes as string)
-            .map(res => {
-                return res.json() as string[];
-            }).subscribe(resp => {
-                this.allTypesSubj.next(resp);
-            });
+        this.http.get<string[]>('/dist/data/all-types-2023.json').subscribe(types => {
+            this.allTypes = types;
+            this.allTypesSubj.next(types);
+        });
     }
 
     dataLoaded: boolean = false;
 
-    geoData: MapData[] = [
-    ];
+    geoData: MapData[] = [];
 
     private allTypesSubj: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
     get allTypesObs(): Observable<string[]> {
         return this.allTypesSubj.asObservable();
     }
-    allTypes: string[] = allTypes as string[];
+    allTypes: string[] = [];
 
     mapDataQuery(searchString: string, selectedTypes: string[], ignoredTypes: string[], mapBounds?: { ne: google.maps.LatLng, sw: google.maps.LatLng } | null, shapeContainsCallback?: ((p: number[]) => boolean) | null): Promise<MapData[]> {
         var mapData = this.geoData;

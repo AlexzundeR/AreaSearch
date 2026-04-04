@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpModule } from '@angular/http';
+import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { DxMapModule } from 'devextreme-angular/ui/map';
 import { DxSelectBoxModule } from 'devextreme-angular/ui/select-box';
@@ -24,7 +24,7 @@ import {RouteDrawingService} from "./services/routeDrawing.service";
     ],
     imports: [
         CommonModule,
-        HttpModule,
+        HttpClientModule,
         FormsModule,
         RouterModule.forRoot([
             {path: '', component: MapComponent, pathMatch: 'full'},

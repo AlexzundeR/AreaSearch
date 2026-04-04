@@ -1,32 +1,33 @@
-﻿import {Injectable} from "@angular/core";
-import {BehaviorSubject, Subject} from "rxjs/Rx";
-import {Route, RoutePoint} from "../models/route.type";
-import {Observable} from "rxjs/Observable";
-import {RouteService} from "./route.service";
-import MarkerWithLabel from "@googlemaps/markerwithlabel";
+import { Injectable } from "@angular/core";
+import { BehaviorSubject, Subject, combineLatest, Observable } from "rxjs";
+import { Route, RoutePoint } from "../models/route.type";
+import { RouteService } from "./route.service";
+import { MarkerWithLabel } from "@googlemaps/markerwithlabel";
 
 class DrawnPoint {
-    point: RoutePoint;
-    marker: MarkerWithLabel;
+    point!: RoutePoint;
+    marker!: MarkerWithLabel;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class RouteDrawingService {
     private $map: Subject<google.maps.Map> = new Subject<google.maps.Map>();
-    private $enabled: Subject<boolean> = new BehaviorSubject<boolean>(false);
-    private previousMap: google.maps.Map;
+    private $enabled: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+    private previousMap!: google.maps.Map;
 
     private drawnPoints: DrawnPoint[] = [];
-    private drawnPolyline: google.maps.Polyline;
-    private positionMarker: google.maps.Marker;
+    private drawnPolyline!: google.maps.Polyline;
+    private positionMarker!: google.maps.Marker;
     private currentPositionShowEnabled: boolean = false;
 
     constructor(private routeService: RouteService) {
         this.$map.subscribe(map => this.mapChanged(map));
-        this.$map.combineLatest(routeService.$route, this.$enabled)
-            .subscribe(([m, r, e]) => {
-                this.redraw(m, r, e);
-            });
+        
+        combineLatest([this.$map, routeService.$route, this.$enabled]).subscribe(([m, r, e]) => {
+            this.redraw(m, r, e);
+        });
 
         setInterval(() => {
             this.drawCurrentPosition()
@@ -35,7 +36,6 @@ export class RouteDrawingService {
 
     private mapChanged(map: google.maps.Map) {
         if (!!this.previousMap) {
-            //deinit map
         }
 
         if (this.positionMarker) {
@@ -81,13 +81,12 @@ export class RouteDrawingService {
 
         this.drawnPoints = route.points.map(p => {
             const marker = new MarkerWithLabel({
-                // clickable: true,
                 position: new google.maps.LatLng(p.coordinates.lat, p.coordinates.lng),
                 draggable: true,
                 map: map,
-                labelContent: `<span style="font-size:12px; font-weight: bolder;background-color: aliceblue; color: red;">${p.name}</span>`, // can also be HTMLElement
+                labelContent: `<span style="font-size:12px; font-weight: bolder;background-color: aliceblue; color: red;">${p.name}</span>`,
                 labelAnchor: new google.maps.Point(-21, 3),
-                labelClass: "labels", // the CSS class for the label
+                labelClass: "labels",
             });
 
             marker.setMap(map);
@@ -144,7 +143,8 @@ export class RouteDrawingService {
             return;
         }
 
-        this.drawnPolyline.setPath(this.drawnPoints.map(p => p.marker.getPosition()));
+        const positions = this.drawnPoints.map(p => p.marker.getPosition()).filter((p): p is google.maps.LatLng => p !== null && p !== undefined);
+        this.drawnPolyline.setPath(positions);
     }
 
 
