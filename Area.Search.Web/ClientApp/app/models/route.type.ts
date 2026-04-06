@@ -11,6 +11,8 @@ export interface RoutePoint {
     name: string;
     description: string;
     coordinates: Coordinates;
+    _pendingName?: string;
+    _pendingDescription?: string;
 }
 
 export interface Coordinates {

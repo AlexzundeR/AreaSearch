@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
-import { Coordinates, Route, RoutePoint } from "../models/route.type";
-import { Observable, BehaviorSubject, Subject, map, shareReplay, skipWhile, combineLatest } from "rxjs";
+import { Route, RoutePoint } from "../models/route.type";
+import { Observable, BehaviorSubject, Subject as RxSubject, map, defer } from "rxjs";
+import { switchMap, catchError, takeUntil, tap, distinctUntilChanged } from "rxjs/operators";
 
 export class ServiceError {
     error!: string;
@@ -12,58 +13,78 @@ export class ServiceError {
     providedIn: 'root'
 })
 export class RouteService {
-    public constructor(private http: HttpClient) {
-    }
-
-    private routeSub: BehaviorSubject<Route> = new BehaviorSubject<Route>({
+    private routeSub = new BehaviorSubject<Route>({
         routeId: 0,
         points: [],
         lastModificationDate: new Date(),
         name: ''
     });
 
-    private errorsSub: Subject<ServiceError> = new Subject<ServiceError>();
-
+    private errorsSub = new RxSubject<ServiceError>();
     public $errors: Observable<ServiceError> = this.errorsSub;
 
+    private updateTriggerSub = new RxSubject<Route>();
+    private stopUpdateSub = new RxSubject<void>();
+    private savingSub = new BehaviorSubject<boolean>(false);
+
+    public $saving: Observable<boolean> = this.savingSub.asObservable();
+
+    public $routePoints: Observable<RoutePoint[]> = this.routeSub.pipe(
+        map((r: Route) => r.points)
+    );
+
     public $route: Observable<Route> = this.routeSub.pipe(
-        map(r => {
-            r.points.forEach((p, i) => p.pointId = i);
+        map((r: Route) => {
+            r.points.forEach((p: RoutePoint, i: number) => { p.pointId = i; });
             return r;
         })
     );
 
-    private previousPoints?: RoutePoint[];
-    public $routePoints: Observable<RoutePoint[]> = this.routeSub.pipe(
-        shareReplay(),
-        skipWhile((newRoute) => {
-            if (!this.previousPoints) {
-                this.previousPoints = newRoute.points;
-                return false;
-            }
+    constructor(private http: HttpClient) {
+        this.initUpdatePipeline();
+    }
 
-            let isChanged = false;
-            for (const index in newRoute.points) {
-                const oldPoint = this.previousPoints[index];
-                const newPoint = newRoute.points[index];
-
-                if (!oldPoint || !newPoint) {
-                    isChanged = true;
-                    break;
+    private initUpdatePipeline() {
+        this.updateTriggerSub.pipe(
+            tap(() => this.savingSub.next(true)),
+            switchMap(route => 
+                defer(() => this.http.post<Route>("/api/route", route)).pipe(
+                    catchError((error: HttpErrorResponse) => {
+                        this.handleError(error);
+                        return [];
+                    })
+                )
+            ),
+            tap(() => this.savingSub.next(false)),
+            takeUntil(this.stopUpdateSub)
+        ).subscribe({
+            next: (updatedRoute) => {
+                if (updatedRoute) {
+                    const currentRoute = this.routeSub.value;
+                    currentRoute.lastModificationDate = updatedRoute.lastModificationDate;
+                    currentRoute.routeId = updatedRoute.routeId;
+                    currentRoute.name = updatedRoute.name;
                 }
-
-                if (oldPoint.name !== newPoint.name || oldPoint.description !== newPoint.description
-                    || oldPoint.coordinates.lng !== newPoint.coordinates.lng || oldPoint.coordinates.lat !== oldPoint.coordinates.lat) {
-                    isChanged = true;
-                    break;
-                }
             }
-            this.previousPoints = newRoute.points;
-            return !isChanged;
-        }),
-        map(r => r.points)
-    );
+        });
+    }
 
+    private handleError(response: HttpErrorResponse) {
+        let error: ServiceError;
+        if (response.error) {
+            error = response.error as ServiceError;
+        } else {
+            error = { error: 'Ошибка', description: response.message || `Ошибка сервера: ${response.status}` };
+        }
+        if (!error.error) {
+            error.error = `${response.status} ${response.statusText}`;
+        }
+        if (response.status === 409) {
+            error.error = 'concurrent_access';
+            error.description = 'Данные были изменены другим пользователем. Пожалуйста, обновите страницу.';
+        }
+        this.errorsSub.next(error);
+    }
 
     get route(): Route {
         return this.routeSub.value;
@@ -77,20 +98,30 @@ export class RouteService {
         const points = [...this.route.points];
         points.splice(fromIndex, 1);
         points.splice(toIndex, 0, point);
-        const routeToUpdate = Object.assign({}, this.route, {points: points});
-
-        this.updateRoute(routeToUpdate).then();
+        this.queueUpdate({ ...this.route, points });
     }
 
+    reorderPoints(newOrder: RoutePoint[]) {
+        const currentRoute = this.routeSub.value;
+        currentRoute.points.splice(0, currentRoute.points.length, ...newOrder);
+        this.routeSub.next({ ...currentRoute, points: [...currentRoute.points] });
+        this.queueUpdate(currentRoute);
+    }
 
     addPoint(newPoint: RoutePoint) {
-        const routeToUpdate = Object.assign({}, this.route, {points: [...this.route.points, newPoint]});
-        this.updateRoute(routeToUpdate).then();
+        const currentRoute = this.routeSub.value;
+        currentRoute.points.push(newPoint);
+        this.routeSub.next({ ...currentRoute, points: [...currentRoute.points] });
+        this.queueUpdate(currentRoute);
     }
 
-    public async getRoute(routeId: number): Promise<Route> {
+    private queueUpdate(route: Route) {
+        this.updateTriggerSub.next(route);
+    }
+
+    async getRoute(routeId: number): Promise<Route> {
         const newRoute = await this.http.get<Route>("/api/route", {
-            params: {routeId: routeId}
+            params: { routeId }
         }).toPromise();
 
         if (newRoute) {
@@ -99,43 +130,22 @@ export class RouteService {
         return this.route;
     }
 
-    public async updateRoute(route: Route) {
-        const updatedRoute = await this.http.post<Route>("/api/route", route)
-            .toPromise()
-            .catch((response: HttpErrorResponse) => {
-                try {
-                    const error = response.error as ServiceError;
-                    if (!error.error){
-                        error.error = `${response.status} ${response.statusText}`;
-                    }
-                    this.errorsSub.next(error);
-                } catch (ex) {
-                }
-                throw response;
-            });
-
-        if (updatedRoute) {
-            this.route = updatedRoute;
-        }
-        return this.route;
-    }
-
     setPoint(point: RoutePoint, newPointValues: RoutePoint) {
-        const routeToUpdate = Object.assign({}, this.route, {
-            points: this.route.points.map(p => {
-                if (p.pointId === point.pointId) {
-                    return Object.assign({}, p, newPointValues)
-                }
-
-                return p;
-            })
-        });
-        this.updateRoute(routeToUpdate).then();
+        const currentRoute = this.routeSub.value;
+        const pointIndex = currentRoute.points.findIndex(p => p.pointId === point.pointId);
+        if (pointIndex >= 0) {
+            Object.assign(currentRoute.points[pointIndex], newPointValues);
+            this.routeSub.next({ ...currentRoute, points: [...currentRoute.points] });
+        }
+        
+        this.queueUpdate(currentRoute);
     }
 
     deletePoints(selectedPoints: RoutePoint[]) {
+        const currentRoute = this.routeSub.value;
         const selectedPointsIds = new Set(selectedPoints.map(p => p.pointId));
-        const routeToUpdate = Object.assign({}, this.route, {points: this.route.points.filter(p => !selectedPointsIds.has(p.pointId))});
-        return this.updateRoute(routeToUpdate).then();
+        currentRoute.points = currentRoute.points.filter(p => !selectedPointsIds.has(p.pointId));
+        this.routeSub.next({ ...currentRoute, points: [...currentRoute.points] });
+        this.queueUpdate(currentRoute);
     }
 }

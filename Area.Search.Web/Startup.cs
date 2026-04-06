@@ -1,7 +1,8 @@
-using Area.Search.Repository;
-using Area.Search.Services;
-using Area.Search.Web.Helpers;
-
+using System;
+using System.IO;
+using System.Net;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
@@ -9,7 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using System.IO;
+using Area.Search.Repository;
+using Area.Search.Services;
+using Area.Search.Web.Helpers;
+using Area.Search.Domain.Exceptions;
 
 namespace Area.Search.Web
 {
@@ -58,6 +62,35 @@ namespace Area.Search.Web
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
+
+            app.UseExceptionHandler(errorApp =>
+            {
+                errorApp.Run(async context =>
+                {
+                    Exception? ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+                    
+                    int statusCode = (int)HttpStatusCode.InternalServerError;
+                    string errorCode = "ServerError";
+                    string description = "Внутренняя ошибка сервера";
+
+                    if (ex is ConcurrentAccessException)
+                    {
+                        statusCode = 409;
+                        errorCode = "concurrent_access";
+                        description = "Данные были изменены другим пользователем. Обновите страницу.";
+                    }
+                    else if (ex != null)
+                    {
+                        description = ex.Message;
+                    }
+
+                    context.Response.StatusCode = statusCode;
+                    context.Response.ContentType = "application/json";
+                    var error = new { error = errorCode, description };
+                    var json = JsonSerializer.Serialize(error);
+                    await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(json));
+                });
             });
 
             if (env.IsDevelopment())

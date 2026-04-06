@@ -1,21 +1,43 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
-import { DxMapModule } from 'devextreme-angular/ui/map';
-import { DxSelectBoxModule } from 'devextreme-angular/ui/select-box';
-import { DxTagBoxModule } from 'devextreme-angular/ui/tag-box';
-import { DxListModule  } from 'devextreme-angular/ui/list';
-import { DxTextBoxModule } from 'devextreme-angular/ui/text-box';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { GoogleMapsModule } from '@angular/google-maps';
+
+import { TabViewModule } from 'primeng/tabview';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { ListboxModule } from 'primeng/listbox';
+import { OrderListModule } from 'primeng/orderlist';
+import { TableModule } from 'primeng/table';
+import { InputTextModule } from 'primeng/inputtext';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 import { AppComponent } from './components/app/app.component';
 import { MapService } from './services/map.service';
 import { MapComponent } from './components/map/map.component';
 import { StateService } from './services/state.service';
 import {RouteService} from "./services/route.service";
-import {DxTabPanelModule} from "devextreme-angular";
 import {RouteDrawingService} from "./services/routeDrawing.service";
+
+export function loadGoogleMaps() {
+    return () => {
+        return new Promise<void>((resolve) => {
+            if (typeof google !== 'undefined' && google.maps) {
+                resolve();
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&libraries=drawing';
+                script.onload = () => resolve();
+                document.head.appendChild(script);
+            }
+        });
+    };
+}
 
 @NgModule({
     declarations: [
@@ -26,18 +48,30 @@ import {RouteDrawingService} from "./services/routeDrawing.service";
         CommonModule,
         HttpClientModule,
         FormsModule,
+        BrowserAnimationsModule,
         RouterModule.forRoot([
             {path: '', component: MapComponent, pathMatch: 'full'},
             {path: 'map', component: MapComponent},
             {path: '**', redirectTo: '/map'}
-        ])
-        , DxMapModule, DxSelectBoxModule, DxListModule, DxTagBoxModule, DxTextBoxModule, DxTabPanelModule
+        ]),
+        TabViewModule,
+        MultiSelectModule,
+        ListboxModule,
+        OrderListModule,
+        TableModule,
+        InputTextModule,
+        CheckboxModule,
+        ButtonModule,
+        GoogleMapsModule,
+        ToastModule
     ],
     providers: [
+        { provide: APP_INITIALIZER, useFactory: loadGoogleMaps, multi: true },
         MapService,
         StateService,
         RouteService,
-        RouteDrawingService
+        RouteDrawingService,
+        MessageService
     ]
 })
 export class AppModuleShared {

@@ -1,163 +1,164 @@
-﻿<div class="map-page-container">
+<div class="map-page-container">
+    <p-toast position="top-right" [life]="5000"></p-toast>
     <div class="filter-column">
         <div class="filter-container">
-            <div *ngIf="lastError">
-                <pre class="alert-danger">
-                    {{lastError.error}}
-                    {{lastError.description}}
-                </pre>
+            <div *ngIf="lastError" class="alert alert-danger">
+                <pre>{{lastError.error}}
+{{lastError.description}}</pre>
             </div>
-            <dx-tab-panel
-                #tabPanel
-                height="100%"
-                width="100%"
-                [dataSource]="[{id:'filter', text: 'Поиск'}, {id:'route',text:'Маршрут'}]"
-                [selectedIndex]="0"
-                [loop]="false"
-                [animationEnabled]="false"
-                [swipeEnabled]="false"
-            >
-                <div *dxTemplate="let tab of 'title'">
-                    <span>{{tab.text}}</span>
-                </div>
-                <ng-container *dxTemplate="let tab of 'item'">
-                    <ng-container *ngIf="tab.id === 'filter'">
-                        <div style="height: 100%;display: flex;flex-direction: column;">
-                            <div class="filter-controls" style="margin-top: 5px;flex: 0 0 auto;">
-                                <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
-                                <dx-text-box [(value)]="searchString" (onValueChanged)="onSearchStringChanged($event)" placeholder="Запрос по названию"></dx-text-box>
-                                <!--<input [(ngModel)]="searchString" placeholder="Запрос по названию" />-->
-                                <dx-tag-box [searchEnabled]="true"
-                                            [items]="allTypes"
-                                            [acceptCustomValue]="true"
-                                            [(value)]="selectedTypes"
-                                            (onSelectionChanged)="typeSelectionChanged($event)"
-                                            placeholder="Нужные типы">
-                                </dx-tag-box>
-                                <dx-tag-box [searchEnabled]="true"
-                                            [items]="allTypes"
-                                            [acceptCustomValue]="true"
-                                            [(value)]="ignoredTypes"
-                                            (onSelectionChanged)="ignoredTypeSelectionChanged($event)"
-                                            placeholder="Игнорировать типы"
-                                            style="margin-bottom:5px">
-                                </dx-tag-box>
-                                
-                                <!--<input [(ngModel)]="typeString" placeholder="Запрос по типу" />-->
-                                <!--<input [(ngModel)]="ignoreTypeString" placeholder="Игнорировать типы" />-->
-                                <div>
-                                    <span><input [(ngModel)]="useMapBounds"
-                                                 type="checkbox" (ngModelChange)="onUseMapBoundsChanged()">Учитывать границы карты</span>
-                                    <span><input [(ngModel)]="useMapPolygon"
-                                                (ngModelChange)="onUseMapPolygonChanged()" type="checkbox">Учитывать фигуру</span>
-                                    <span><input [(ngModel)]="showCurrentPosition"
-                                                 (ngModelChange)="onShowCurrentPositionChanged()" type="checkbox">Показывать где я</span>
-                                    
-                                </div>
-                                <div style="margin-top: 5px;">
-                                    <button (click)="onSearchClick($event)">Найти</button>
-                                    <span style="margin-left:10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
-                                    <button (click)="onShowOnMapClick($event)">Показать на карте</button>
-                                </div>
 
+            <p-tabView [(activeIndex)]="activeTabIndex" [style]="{'height': '100%'}">
+                <p-tabPanel header="Поиск" [style]="{'height': '100%'}">
+                    <div style="height: 100%; display: flex; flex-direction: column;">
+                        <div class="filter-controls" style="margin-top: 5px; flex: 0 0 auto;">
+                            <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
+                            
+                            <input type="text" 
+                                   pInputText 
+                                   [(ngModel)]="searchString" 
+                                   (ngModelChange)="onSearchStringChanged($event)"
+                                   placeholder="Запрос по названию"
+                                   style="width: 100%"
+                                   class="mb-2" />
+                            
+                            <p-multiSelect 
+                                [options]="allTypes"
+                                [(ngModel)]="selectedTypes"
+                                placeholder="Нужные типы"
+                                [showClear]="true"
+                                [filter]="true"
+                                (onChange)="typeSelectionChanged()"
+                                [style]="{'width':'100%'}"
+                                styleClass="mb-2">
+                            </p-multiSelect>
+                            
+                            <p-multiSelect 
+                                [options]="allTypes"
+                                [(ngModel)]="ignoredTypes"
+                                placeholder="Игнорировать типы"
+                                [showClear]="true"
+                                [filter]="true"
+                                (ngModelChange)="ignoredTypeSelectionChanged()"
+                                [style]="{'width':'100%'}"
+                                styleClass="mb-2">
+                            </p-multiSelect>
+                            
+                            <div class="mb-2">
+                                <p-checkbox [(ngModel)]="useMapBounds" 
+                                           (ngModelChange)="onUseMapBoundsChanged()" 
+                                           [binary]="true"
+                                           label="Учитывать границы карты"></p-checkbox>
                             </div>
+                            <div class="mb-2">
+                                <p-checkbox [(ngModel)]="useMapPolygon" 
+                                           (ngModelChange)="onUseMapPolygonChanged()" 
+                                           [binary]="true"
+                                           label="Учитывать фигуру"></p-checkbox>
+                            </div>
+                            <div class="mb-2">
+                                <p-checkbox [(ngModel)]="showCurrentPosition" 
+                                           (ngModelChange)="onShowCurrentPositionChanged()" 
+                                           [binary]="true"
+                                           label="Показывать где я"></p-checkbox>
+                            </div>
+                            
+                            <div style="margin-top: 5px;">
+                                <button pButton type="button" (click)="onSearchClick()" label="Найти" class="p-button-sm"></button>
+                                <span style="margin-left: 10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
+                                <button pButton type="button" (click)="onShowOnMapClick()" label="Показать на карте" class="p-button-sm p-button-outlined"></button>
+                            </div>
+                        </div>
 
-                            <div class="filter-list" style="margin-top:5px; flex: 1 1 auto;">
-                                <dx-list #dataList
-                                         width="100%"
-                                         height="100%"
-                                         pageLoadMode="scrollBottom"
-                                         [indicateLoading]="true"
-                                         [searchEnabled]="true"
-                                         keyExpr="id"
-                                         searchExpr="name"
-                                         searchMode="contains"
-                                         selectionMode="all"
-                                         selectAllMode="allPages"
-                                         [showSelectionControls]="true"
-                                         [selectedItems]="selectedMapData"
-                                         (onSelectionChanged)="selectedMapDataChanged($event)"
-                                         [dataSource]="mapDataSource">
-                                    <div *dxTemplate="let item of 'item'" class="mapData">
-                                        <div style="overflow-wrap: anywhere; white-space: normal">{{item.name}}</div>
-                                        <div style="overflow-wrap: anywhere; white-space: normal">
-                            <span *ngFor="let mapPoints of item.data" class="badge badge-info"
-                                  style="margin-left: 1px;">{{mapPoints.type}}</span>
+                        <div class="filter-list" style="height: 100%;">
+                            <p-listbox [options]="mapData" 
+                                       [(ngModel)]="selectedMapData"
+                                       optionLabel="name"
+                                       [multiple]="true"
+                                       [checkbox]="true"
+                                       [filter]="false"
+                                       [style]="{'width': '100%', 'height': '100%'}">
+                                <ng-template let-item pTemplate="item">
+                                    <div class="map-data-item">
+                                        <div style="overflow-wrap: anywhere; white-space: normal;">{{item.name}}</div>
+                                        <div style="overflow-wrap: anywhere; white-space: normal;">
+                                            <span *ngFor="let mapPoints of item.data" class="badge badge-info" style="margin-left: 1px;">{{mapPoints.type}}</span>
                                         </div>
                                     </div>
-
-                                </dx-list>
-                            </div>
+                                </ng-template>
+                            </p-listbox>
                         </div>
-                    </ng-container>
+                    </div>
+                </p-tabPanel>
 
-                    <ng-container *ngIf="tab.id === 'route'">
-                        <div style="margin-top: 5px">
-                            <span><input [(ngModel)]="showRoute" (ngModelChange)="redrawRoute()" type="checkbox">Показывать маршрут</span>
-                            <button (click)="onAddRoutePointClick()">Добавить</button>
-                            <button [disabled]="!selectedPoints.length" (click)="onDeleteRoutePointsClick()">Удалить
-                            </button>
-                        </div>
-                        <div class="route-list" style="margin-top:5px">
-                            <dx-list #routeList
-                                     selectionMode="all"
-                                     [showSelectionControls]="true"
-                                     [selectedItems]="selectedPoints"
-                                     (onSelectionChanged)="selectedPointsChanged($event)"
-                                     [activeStateEnabled]="false"
-                                     [hoverStateEnabled]="false"
-                                     [focusStateEnabled]="false"
-                                     keyExpr="pointId"
-                                     width="100%"
-                                     [dataSource]="routeDataSource | async"
-                                     [allowItemReordering]="true"
-                                     (onItemReordered)="onRoutePointsReordered($event)">
-
-                                <div *dxTemplate="let item of 'item'" class="route-list--item"
-                                     (click)="$event.cancelBubble = true;">
-                                    <!--                                    <dx-text-box-->
-                                    <!--                                            [value]="item.name"-->
-                                    <!--                                            placeholder="Введите имя точки"-->
-                                    <!--                                            (onValueChanged)="pointNameChanged($event, item)"></dx-text-box>-->
-                                    <div>
-                                        <input type="text"
-                                               style="overflow-wrap: anywhere; white-space: normal;height:30px"
-                                               [value]="item.name"
-                                               class="inline-editor"
-                                               placeholder="Введите название точки"
-                                               (change)="pointNameChanged($event, item)"/>
-                                    </div>
-                                    <div>
-                                        <textarea
-                                                rows="3"
-                                                style="overflow-wrap: anywhere; white-space: normal; height: 50px"
-                                                [value]="item.description"
-                                                class="inline-editor"
-                                                placeholder="Описание"
-                                                (change)="pointDescriptionChanged($event, item)">
-                                        </textarea>
-                                    </div>
+                <p-tabPanel header="Маршрут" [style]="{'height': '100%'}">
+                    <div style="margin-top: 5px">
+                        <p-checkbox [(ngModel)]="showRoute" 
+                                   (ngModelChange)="redrawRoute()" 
+                                   [binary]="true"
+                                   label="Показывать маршрут"></p-checkbox>
+                        <span *ngIf="saving" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
+                        <button pButton type="button" (click)="onAddRoutePointClick()" label="Добавить" class="p-button-sm" style="margin-left: 10px;"></button>
+                        <button pButton type="button" (click)="onDeleteRoutePointsClick()" 
+                                [disabled]="!selectedPoints.length" 
+                                label="Удалить" class="p-button-sm p-button-danger"></button>
+                    </div>
+                    <div class="route-list" style="height: 100%;">
+                        <p-orderList 
+                            [value]="(routeDataSource | async) || []"
+                            [(selection)]="selectedPoints"
+                            optionLabel="name"
+                            [dragdrop]="true"
+                            [controlsPosition]="'right'"
+                            [style]="{'width': '100%', 'height': '100%'}"
+                            (onReorder)="onRouteReorder()">
+                            <ng-template let-item pTemplate="item">
+                                <div class="route-list--item" (keydown)="$event.stopPropagation()" [class.selected]="isPointSelected(item)">
+                                    <input type="text"
+                                           style="overflow-wrap: anywhere; white-space: normal; height: 30px"
+                                           [ngModel]="item.name"
+                                           (ngModelChange)="pointNameChanged($event, item)"
+                                           (blur)="onPointFieldBlur(item)"
+                                           (click)="$event.stopPropagation()"
+                                           class="inline-editor"
+                                           [readonly]="!isPointSelected(item)"
+                                           placeholder="Введите название точки"/>
+                                    <textarea
+                                            rows="3"
+                                            style="overflow-wrap: anywhere; white-space: normal; height: 50px"
+                                            [ngModel]="item.description"
+                                            (ngModelChange)="pointDescriptionChanged($event, item)"
+                                            (blur)="onPointFieldBlur(item)"
+                                            (click)="$event.stopPropagation()"
+                                            class="inline-editor"
+                                            [readonly]="!isPointSelected(item)"
+                                            placeholder="Описание">
+                                    </textarea>
                                 </div>
-                            </dx-list>
-                        </div>
-                    </ng-container>
-                </ng-container>
-            </dx-tab-panel>
-
+                            </ng-template>
+                        </p-orderList>
+                    </div>
+                </p-tabPanel>
+            </p-tabView>
         </div>
     </div>
     <div class="map-column">
-        <dx-map apiKey="AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&v=3.31&libraries=drawing"
-                #map
-                [center]="[55.7558, 37.6173]"
-                [zoom]="10"
-                height="100%"
-                width="100%"
-                [(markers)]="mapMarkers"
-                [controls]="true"
-                [autoAdjust]="false"
-                (onReady)="onMapReady($event)"
-                (onMarkerAdded)="markerAdded($event)">
-        </dx-map>
+            <google-map 
+            #googleMap
+            width="100%" 
+            height="100%"
+            [center]="mapCenter || defaultCenter"
+            [zoom]="mapZoom || 10"
+            [options]="mapOptions"
+            (mapClick)="onGoogleMapClick($event)">
+            
+            <map-marker
+                *ngFor="let marker of mapMarkers"
+                [position]="marker.position"
+                [options]="marker.options"
+                (markerClick)="onMarkerClick(marker)"
+                (markerInitialized)="onMarkerInitialized(marker, $event)">
+            </map-marker>
+            
+        </google-map>
     </div>
 </div>

@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Area.Search.Domain;
+using Area.Search.Domain.Exceptions;
 using Area.Search.Repository.Contracts;
 using Area.Search.Services.GetRoute;
 using Area.Search.Services.UpdateRoute;
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace Area.Search.Web.Controllers.Api
@@ -34,9 +33,21 @@ namespace Area.Search.Web.Controllers.Api
         }
 
         [HttpPost("")]
-        public async Task<Route> UpdateRoute([FromBody] Route route, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateRoute([FromBody] Route route, CancellationToken cancellationToken)
         {
-            return await _updateRouteService.UpdateRoute(route, cancellationToken);
+            try
+            {
+                var result = await _updateRouteService.UpdateRoute(route, cancellationToken);
+                return Ok(result);
+            }
+            catch (ConcurrentAccessException)
+            {
+                return StatusCode(409, new { error = "concurrent_access", description = "Данные были изменены другим пользователем. Обновите страницу." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "ServerError", description = ex.Message });
+            }
         }
     }
 }

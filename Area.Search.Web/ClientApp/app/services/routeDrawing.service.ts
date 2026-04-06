@@ -27,10 +27,15 @@ export class RouteDrawingService {
         
         combineLatest([this.$map, routeService.$route, this.$enabled]).subscribe(([m, r, e]) => {
             this.redraw(m, r, e);
+            if (this.currentPositionShowEnabled) {
+                this.drawCurrentPosition();
+            }
         });
 
         setInterval(() => {
-            this.drawCurrentPosition()
+            if (this.currentPositionShowEnabled) {
+                this.drawCurrentPosition();
+            }
         }, 3000)
     }
 
@@ -38,22 +43,18 @@ export class RouteDrawingService {
         if (!!this.previousMap) {
         }
 
-        if (this.positionMarker) {
-            this.positionMarker.setMap(map);
-        } else {
-            this.positionMarker = new google.maps.Marker({
-                position: map.getCenter(),
-                visible: false,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 6,
-                    fillColor: '#0cace2',
-                    strokeColor: '#14c3ff',
-                    strokeWeight: 6
-                },
-                map: map
-            });
-        }
+        this.positionMarker = new google.maps.Marker({
+            position: map.getCenter(),
+            visible: this.currentPositionShowEnabled,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 6,
+                fillColor: '#0cace2',
+                strokeColor: '#14c3ff',
+                strokeWeight: 6
+            },
+            map: map
+        });
 
         this.previousMap = map;
     }
@@ -121,7 +122,11 @@ export class RouteDrawingService {
     }
 
     drawCurrentPosition() {
-        if (!this.positionMarker || !this.currentPositionShowEnabled) {
+        if (!this.currentPositionShowEnabled) {
+            return;
+        }
+
+        if (!this.positionMarker) {
             return;
         }
 
@@ -157,12 +162,12 @@ export class RouteDrawingService {
     }
 
     setCurrentPositionShowEnabled(enabled: boolean) {
+        this.currentPositionShowEnabled = enabled;
+        if (this.positionMarker) {
+            this.positionMarker.setVisible(enabled);
+        }
         if (enabled) {
-            this.currentPositionShowEnabled = true;
             this.drawCurrentPosition();
-        } else {
-            this.currentPositionShowEnabled = false;
-            this.positionMarker.setVisible(false);
         }
     }
 }
