@@ -1,7 +1,16 @@
 <div class="map-page-container">
     <p-toast position="top-right" [life]="5000"></p-toast>
-    <div class="filter-column">
-        <div class="filter-container">
+    <div class="filter-column" 
+         [class.collapsed]="filterPanelCollapsed"
+         [style.width.px]="filterColumnWidth">
+        <button *ngIf="!filterPanelCollapsed" pButton type="button" 
+                icon="pi pi-angle-left" 
+                (click)="toggleFilterPanel()"
+                class="p-button-sm p-button-text collapse-panel-btn"></button>
+        <div class="resize-handle" 
+             *ngIf="!filterPanelCollapsed && !isMobile()"
+             (mousedown)="onResizeStart($event)"></div>
+        <div class="filter-container" [style.display]="filterPanelCollapsed ? 'none' : 'block'">
             <div *ngIf="lastError" class="alert alert-danger">
                 <pre>{{lastError.error}}
 {{lastError.description}}</pre>
@@ -11,15 +20,14 @@
                 <p-tabPanel header="Поиск" [style]="{'height': '100%'}">
                     <div style="height: 100%; display: flex; flex-direction: column;">
                         <div class="filter-controls" style="margin-top: 5px; flex: 0 0 auto;">
-                            <span *ngIf="!mapService.dataLoaded">...ЗАГРУЗКА...</span>
+                            <span *ngIf="!mapService.dataLoaded" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
                             
                             <input type="text" 
                                    pInputText 
                                    [(ngModel)]="searchString" 
                                    (ngModelChange)="onSearchStringChanged($event)"
                                    placeholder="Запрос по названию"
-                                   style="width: 100%"
-                                   class="mb-2" />
+                                   style="width: 100%" />
                             
                             <p-multiSelect 
                                 [options]="allTypes"
@@ -28,8 +36,7 @@
                                 [showClear]="true"
                                 [filter]="true"
                                 (onChange)="typeSelectionChanged()"
-                                [style]="{'width':'100%'}"
-                                styleClass="mb-2">
+                                [style]="{'width':'100%'}">
                             </p-multiSelect>
                             
                             <p-multiSelect 
@@ -39,23 +46,22 @@
                                 [showClear]="true"
                                 [filter]="true"
                                 (ngModelChange)="ignoredTypeSelectionChanged()"
-                                [style]="{'width':'100%'}"
-                                styleClass="mb-2">
+                                [style]="{'width':'100%'}">
                             </p-multiSelect>
                             
-                            <div class="mb-2">
+                            <div class="inline-checkbox">
                                 <p-checkbox [(ngModel)]="useMapBounds" 
                                            (ngModelChange)="onUseMapBoundsChanged()" 
                                            [binary]="true"
                                            label="Учитывать границы карты"></p-checkbox>
                             </div>
-                            <div class="mb-2">
+                            <div class="inline-checkbox">
                                 <p-checkbox [(ngModel)]="useMapPolygon" 
                                            (ngModelChange)="onUseMapPolygonChanged()" 
                                            [binary]="true"
                                            label="Учитывать фигуру"></p-checkbox>
                             </div>
-                            <div class="mb-2">
+                            <div class="inline-checkbox">
                                 <p-checkbox [(ngModel)]="showCurrentPosition" 
                                            (ngModelChange)="onShowCurrentPositionChanged()" 
                                            [binary]="true"
@@ -64,12 +70,12 @@
                             
                             <div style="margin-top: 5px;">
                                 <button pButton type="button" (click)="onSearchClick()" label="Найти" class="p-button-sm"></button>
-                                <span style="margin-left: 10px; margin-right: 10px;">Найдено: {{mapData?.length || 0}}</span>
                                 <button pButton type="button" (click)="onShowOnMapClick()" label="Показать на карте" class="p-button-sm p-button-outlined"></button>
                             </div>
                         </div>
 
                         <div class="filter-list" style="height: 100%;">
+                            <span style="margin-left: 10px; margin-right: 10px; position: absolute; right: 60px; margin-top: 12px;"><b>Найдено: {{mapData?.length || 0}}</b></span>
                             <p-listbox [options]="mapData" 
                                        [(ngModel)]="selectedMapData"
                                        optionLabel="name"
@@ -90,49 +96,54 @@
                     </div>
                 </p-tabPanel>
 
-                <p-tabPanel header="Маршрут" [style]="{'height': '100%'}">
-                    <div style="margin-top: 5px">
+                <p-tabPanel header="Маршрут" style="height: 100%; display:flex; flex-direction:column;">
+                    <div style="margin-top: 5px; flex:0;">
                         <p-checkbox [(ngModel)]="showRoute" 
                                    (ngModelChange)="redrawRoute()" 
                                    [binary]="true"
                                    label="Показывать маршрут"></p-checkbox>
                         <span *ngIf="saving" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
+                        <br/>
                         <button pButton type="button" (click)="onAddRoutePointClick()" label="Добавить" class="p-button-sm" style="margin-left: 10px;"></button>
                         <button pButton type="button" (click)="onDeleteRoutePointsClick()" 
-                                [disabled]="!selectedPoints.length" 
+                                [disabled]="!selectedPoint" 
                                 label="Удалить" class="p-button-sm p-button-danger"></button>
                     </div>
-                    <div class="route-list" style="height: 100%;">
+                    <div class="route-list-controls" *ngIf="isMobile() && selectedPoint">
+                        <button pButton type="button" icon="pi pi-arrow-up" (click)="moveSelectedPointUp()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
+                        <button pButton type="button" icon="pi pi-arrow-down" (click)="moveSelectedPointDown()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
+                    </div>
+                    <div class="route-list" style="height: 100%; flex: 1;">
                         <p-orderList 
                             [value]="(routeDataSource | async) || []"
-                            [(selection)]="selectedPoints"
                             optionLabel="name"
-                            [dragdrop]="true"
+                            [dragdrop]="!isMobile()"
                             [controlsPosition]="'right'"
-                            [style]="{'width': '100%', 'height': '100%'}"
+                            [selection]="selectedPoint ? [selectedPoint] : []"
+                            style="height: 100%; width: 100%;"
                             (onReorder)="onRouteReorder()">
-                            <ng-template let-item pTemplate="item">
-                                <div class="route-list--item" (keydown)="$event.stopPropagation()" [class.selected]="isPointSelected(item)">
-                                    <input type="text"
-                                           style="overflow-wrap: anywhere; white-space: normal; height: 30px"
-                                           [ngModel]="item.name"
-                                           (ngModelChange)="pointNameChanged($event, item)"
-                                           (blur)="onPointFieldBlur(item)"
-                                           (click)="$event.stopPropagation()"
-                                           class="inline-editor"
-                                           [readonly]="!isPointSelected(item)"
-                                           placeholder="Введите название точки"/>
-                                    <textarea
-                                            rows="3"
-                                            style="overflow-wrap: anywhere; white-space: normal; height: 50px"
-                                            [ngModel]="item.description"
-                                            (ngModelChange)="pointDescriptionChanged($event, item)"
-                                            (blur)="onPointFieldBlur(item)"
-                                            (click)="$event.stopPropagation()"
-                                            class="inline-editor"
-                                            [readonly]="!isPointSelected(item)"
-                                            placeholder="Описание">
-                                    </textarea>
+                            <ng-template let-item pTemplate="item" let-i="index">
+                                <div class="route-list--item" [class.selected]="selectedPoint?.pointId === item.pointId" (click)="selectPoint(item)">
+                                    <div class="route-item-fields">
+                                        <input type="text"
+                                               style="overflow-wrap: anywhere; white-space: normal; height: 30px"
+                                               [ngModel]="item.name"
+                                               (ngModelChange)="pointNameChanged($event, item)"
+                                               (blur)="onPointFieldBlur(item)"
+                                               class="inline-editor"
+                                               [readonly]="selectedPoint?.pointId !== item.pointId"
+                                               placeholder="Введите название точки"/>
+                                        <textarea
+                                                rows="3"
+                                                style="overflow-wrap: anywhere; white-space: normal; height: 50px"
+                                                [ngModel]="item.description"
+                                                (ngModelChange)="pointDescriptionChanged($event, item)"
+                                                (blur)="onPointFieldBlur(item)"
+                                                class="inline-editor"
+                                                [readonly]="selectedPoint?.pointId !== item.pointId"
+                                                placeholder="Описание">
+                                        </textarea>
+                                    </div>
                                 </div>
                             </ng-template>
                         </p-orderList>
@@ -141,8 +152,12 @@
             </p-tabView>
         </div>
     </div>
-    <div class="map-column">
-            <google-map 
+    <div class="map-column" style="position: relative;">
+        <button *ngIf="filterPanelCollapsed" pButton type="button" 
+                icon="pi pi-angle-right" 
+                (click)="toggleFilterPanel()"
+                class="p-button-sm p-button-text expand-btn"></button>
+        <google-map 
             #googleMap
             width="100%" 
             height="100%"

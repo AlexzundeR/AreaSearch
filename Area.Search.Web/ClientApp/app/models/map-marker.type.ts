@@ -5,6 +5,15 @@ export interface IAnnotationData {
 export class MapMarker {
     constructor(public location: Array<number>, public config: any) {
     }
+    
+    get position(): any {
+        return { lat: this.location[0], lng: this.location[1] };
+    }
+    
+    get options(): any {
+        return this.config;
+    }
+    
     originalMarker?: any;
     infoWindow?: any;
     infoWindowShowed? = false;

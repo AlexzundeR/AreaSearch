@@ -1,3 +1,8 @@
-@media (max-width: 767px) {
-    /* On small screens, the nav menu spans the full width of the screen. Leave a space for it. */
+:host {
+    display: block;
+    height: 100%;
+}
+
+.body-content {
+    height: 100%;
 }

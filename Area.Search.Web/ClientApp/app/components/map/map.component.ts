@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { MapData, MapDataPoint } from '../../models/map-data.model';
 import { MapService } from '../../services/map.service';
 import { StateService } from '../../services/state.service';
@@ -34,10 +34,19 @@ export class MapComponent implements OnChanges, AfterViewInit {
     @Input() showCurrentPosition: boolean = false;
     @Input() showRoute: boolean = true;
     @Input() selectedMapData: MapData[] = [];
-    @Input() selectedPoints: RoutePoint[] = [];
+    selectedPoint: RoutePoint | null = null;
+    filterPanelCollapsed: boolean = false;
+    filterColumnWidth: number = 500;
+    private resizing: boolean = false;
+    private startX: number = 0;
+    private startWidth: number = 0;
+    private boundResizeMove: any;
+    private boundResizeEnd: any;
+    focusedPointId: number | null = null;
     @ViewChild('routeList') routeList: any;
     @ViewChild('dataList') dataList: any;
     @ViewChild('map') mapControl!: any;
+    @ViewChild('filterColumn') filterColumn!: any;
     map!: google.maps.Map;
     mapCenter!: any;
     mapZoom!: any;
@@ -62,7 +71,8 @@ export class MapComponent implements OnChanges, AfterViewInit {
         private stateService: StateService,
         private routeService: RouteService,
         private routeDrawingService: RouteDrawingService,
-        private messageService: MessageService) {
+        private messageService: MessageService,
+        private cdr: ChangeDetectorRef) {
 
         this.mapChanged = this.mapChanged.bind(this);
         this.onWindowResize = this.onWindowResize.bind(this);
@@ -95,11 +105,41 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     onWindowResize() {
-        if (this.map && window.innerWidth < 769) {
-            this.map.setOptions({ gestureHandling: 'cooperative' });
-        } else {
-            this.map.setOptions({ gestureHandling: 'greedy' });
+        if (this.map) {
+            if (window.innerWidth < 769) {
+                this.map.setOptions({ gestureHandling: 'cooperative' });
+            } else {
+                this.map.setOptions({ gestureHandling: 'greedy' });
+            }
         }
+    }
+
+    onResizeStart(event: MouseEvent) {
+        if (this.isMobile()) return;
+        
+        event.preventDefault();
+        
+        this.resizing = true;
+        this.startX = event.clientX;
+        this.startWidth = this.filterColumnWidth;
+        
+        document.addEventListener('mousemove', this.onResizeMove);
+        document.addEventListener('mouseup', this.onResizeEnd);
+    }
+
+    onResizeMove = (event: MouseEvent) => {
+        if (!this.resizing) return;
+        
+        const diff = event.clientX - this.startX;
+        const newWidth = Math.max(150, Math.min(800, this.startWidth + diff));
+        this.filterColumnWidth = newWidth;
+        this.cdr.detectChanges();
+    }
+
+    onResizeEnd = () => {
+        this.resizing = false;
+        document.removeEventListener('mousemove', this.onResizeMove);
+        document.removeEventListener('mouseup', this.onResizeEnd);
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -109,6 +149,10 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     ngOnInit() {
+        if (window.innerWidth < 769) {
+            this.filterPanelCollapsed = true;
+        }
+        
         var state = this.stateService.loadState();
         if (state) {
             this.mapData = state.mapData;
@@ -400,7 +444,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
                             });
                         }
                     });
-                    this.allTypes = Array.from(newTypes);
+                    const oldSelectedTypes = [...this.selectedTypes];
+                    const oldIgnoredTypes = [...this.ignoredTypes];
+                    this.allTypes = Array.from(newTypes).sort();
+                    this.selectedTypes = oldSelectedTypes.filter(t => this.allTypes.includes(t));
+                    this.ignoredTypes = oldIgnoredTypes.filter(t => this.allTypes.includes(t));
                 }
 
             });
@@ -441,16 +489,13 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     onDeleteRoutePointsClick() {
-        this.routeService.deletePoints(this.selectedPoints);
-        this.selectedPoints = [];
+        if (this.selectedPoint) {
+            this.routeService.deletePoints([this.selectedPoint]);
+            this.selectedPoint = null;
+        }
     }
 
     selectedPointsChanged(e: any) {
-        var newData = this.selectedPoints.filter(d => (e.removedItems as RoutePoint[]).every(p => p.pointId != d.pointId));
-        (e.addedItems as RoutePoint[]).filter(d => newData.every(p => p.pointId != d.pointId)).forEach(e => {
-            newData.push(e);
-        });
-        this.selectedPoints = newData;
     }
 
     redrawRoute() {
@@ -467,6 +512,87 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     onRouteReorder() {
         this.routeService.reorderPoints(this.routeService.route.points);
+    }
+
+    movePointUp(point: RoutePoint) {
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === point.pointId);
+        if (index > 0) {
+            const temp = points[index];
+            points[index] = points[index - 1];
+            points[index - 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    movePointDown(point: RoutePoint) {
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === point.pointId);
+        if (index < points.length - 1) {
+            const temp = points[index];
+            points[index] = points[index + 1];
+            points[index + 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    moveSelectedPointUp() {
+        if (!this.selectedPoint) return;
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === this.selectedPoint!.pointId);
+        if (index > 0) {
+            const temp = points[index];
+            points[index] = points[index - 1];
+            points[index - 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    moveSelectedPointDown() {
+        if (!this.selectedPoint) return;
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === this.selectedPoint!.pointId);
+        if (index < points.length - 1) {
+            const temp = points[index];
+            points[index] = points[index + 1];
+            points[index + 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    moveFocusedPointUp() {
+        if (!this.focusedPointId) return;
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === this.focusedPointId);
+        if (index > 0) {
+            const temp = points[index];
+            points[index] = points[index - 1];
+            points[index - 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    moveFocusedPointDown() {
+        if (!this.focusedPointId) return;
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === this.focusedPointId);
+        if (index < points.length - 1) {
+            const temp = points[index];
+            points[index] = points[index + 1];
+            points[index + 1] = temp;
+            this.routeService.reorderPoints([...points]);
+        }
+    }
+
+    deleteFocusedPoint() {
+        if (!this.focusedPointId) return;
+        const points = this.routeService.route.points;
+        const index = points.findIndex(p => p.pointId === this.focusedPointId);
+        if (index >= 0) {
+            const point = points[index];
+            this.routeService.deletePoints([point]);
+            this.focusedPointId = null;
+        }
     }
 
     pointNameChanged(newValue: string, point: RoutePoint) {
@@ -499,17 +625,33 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     isPointSelected(point: RoutePoint): boolean {
-        return this.selectedPoints.some(p => p.pointId === point.pointId);
+        return this.selectedPoint?.pointId === point.pointId;
     }
 
-    togglePointSelection(point: RoutePoint, selected: boolean) {
-        const index = this.selectedPoints.findIndex(p => p.pointId === point.pointId);
-        if (selected && index < 0) {
-            this.selectedPoints.push(point);
-        } else if (!selected && index >= 0) {
-            this.selectedPoints.splice(index, 1);
+    isPointFocused(point: RoutePoint): boolean {
+        return this.focusedPointId === point.pointId;
+    }
+
+    onPointFocus(point: RoutePoint) {
+        this.focusedPointId = point.pointId;
+    }
+
+    selectPoint(point: RoutePoint) {
+        this.selectedPoint = point;
+    }
+
+    toggleFilterPanel() {
+        if (this.filterPanelCollapsed) {
+            this.filterPanelCollapsed = false;
+            this.filterColumnWidth = 500;
+        } else {
+            this.filterPanelCollapsed = true;
+            this.filterColumnWidth = 0;
         }
-        this.updateState();
+    }
+
+    isMobile(): boolean {
+        return window.innerWidth < 769;
     }
 
     trackByPointId(index: number, item: RoutePoint): number {

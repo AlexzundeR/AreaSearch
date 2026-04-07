@@ -1,0 +1,145 @@
+:root {
+    --spacing: 0.5rem;
+    --inline-spacing: 0.25rem;
+    --padding: 0.25rem;
+    --padding-x: 0.25rem;
+    --padding-y: 0.125rem;
+    --padding-top: 0.125rem;
+    --padding-bottom: 0.125rem;
+    --padding-left: 0.25rem;
+    --padding-right: 0.25rem;
+    --content-padding: 0.25rem;
+    --content-padding-x: 0.25rem;
+    --content-padding-y: 0.125rem;
+    --input-padding: 0.125rem 0.25rem;
+    --input-text-padding: 0.125rem 0.25rem;
+    --button-padding: 0.125rem 0.25rem;
+    --list-item-padding: 0.125rem 0.25rem;
+    --header-padding: 0.25rem;
+    --panel-content-padding: 0.25rem;
+    --tab-view-panel-padding: 0.25rem;
+    --tab-header-padding: 0.125rem 0.25rem;
+    --menu-padding: 0.125rem 0;
+    --menuitem-padding: 0.125rem 0.25rem;
+    --menuitem-link-padding: 0.125rem 0.25rem;
+    --input-height: 30px;
+    --input-font-size: 13px;
+    --font-size: 13px;
+    --font-size-sm: 12px;
+    --font-size-md: 13px;
+    --border-radius: 3px;
+    --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #3B82F6;
+    --text-xl: 14px;
+    --text-lg: 13px;
+    --text-md: 13px;
+    --text-sm: 12px;
+}
+
+.p-button.p-button-sm {
+    padding: 0.4rem 0.3rem;
+    font-size: 14px;
+    margin-right: 5px;
+}
+
+.p-checkbox .p-checkbox-box {
+    width: 20px;
+    height: 20px;
+}
+
+.p-checkbox-label{
+    margin-bottom: 0px;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.p-inputtext {
+    padding: 0.125rem 0.25rem;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.p-multiselect {
+    min-height: 30px;
+    margin-bottom: 2px;
+}
+
+.p-multiselect .p-multiselect-label {
+    padding: 0.125rem 0.25rem;
+    font-size: 14px;
+}
+
+.p-multiselect-item {
+    font-size: 14px;
+}
+
+.p-multiselect-token {
+    font-size: 14px;
+}
+
+.p-multiselect-header {
+    padding: 0.125rem;
+}
+
+.p-tabview .p-tabview-panels {
+    padding: 0.25rem;
+}
+
+.p-tabview .p-tabview-nav {
+    margin-bottom: 0;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+    padding: 0.5rem;
+    font-size: 14px;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    padding: 0.5rem;
+}
+
+.p-listbox .p-listbox-list {
+    padding: 0.125rem;
+}
+
+.p-listbox .p-listbox-item {
+    padding: 0;
+    font-size: 14px;
+    min-height: 55px;
+}
+
+.p-orderlist .p-orderlist-list {
+    padding: 0.125rem;
+}
+
+.p-orderlist .p-orderlist-item {
+    padding: 0;
+    font-size: 14px;
+    min-height: 55px;
+}
+
+.map-data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.map-data-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.map-data-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.map-data-types .badge {
+    font-size: 11px;
+    padding: 1px 4px;
+    margin: 0;
+}

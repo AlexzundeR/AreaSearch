@@ -34,7 +34,8 @@
               "node_modules/primeng/resources/themes/lara-light-blue/theme.css",
               "node_modules/primeng/resources/primeng.min.css",
               "ClientApp/app/components/app/app.component.css",
-              "ClientApp/app/components/map/map.component.css"
+              "ClientApp/app/components/map/map.component.css",
+              "ClientApp/app/components/map/compact.css"
             ],
             "scripts": [
               "node_modules/jquery/dist/jquery.min.js",
