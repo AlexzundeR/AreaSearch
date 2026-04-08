@@ -697,11 +697,12 @@ export class MapComponent implements OnChanges, AfterViewInit {
         if (validPoints.length === 0) return;
 
         const coords = validPoints.map(p => `${p.coordinates.lat},${p.coordinates.lng}`).join('~');
-        const url = `https://yandex.ru/maps/213/moscow/?mode=routes&rtext=${coords}&rtt=mt`;
         
         if (this.isMobile()) {
-            window.open(url, '_system');
+            const url = `yandexmaps://maps.yandex.com/?rtext=${coords}&rtt=mt`;
+            window.location.href = url;
         } else {
+            const url = `https://yandex.ru/maps/213/moscow/?mode=routes&rtext=${coords}&rtt=mt`;
             window.open(url, '_blank');
         }
     }
@@ -721,7 +722,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
         const url = `https://2gis.ru/route/from/${from}/to/${to}`;
         
         if (this.isMobile()) {
-            window.open(url, '_system');
+            window.location.href = url;
         } else {
             window.open(url, '_blank');
         }
