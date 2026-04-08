@@ -106,12 +106,18 @@
                                    (ngModelChange)="redrawRoute()" 
                                    [binary]="true"
                                    label="Показывать маршрут"></p-checkbox>
-                        <span *ngIf="saving" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
-                        <br/>
-                        <button pButton type="button" (click)="onAddRoutePointClick()" label="Добавить" class="p-button-sm" style="margin-left: 10px;"></button>
-                        <button pButton type="button" (click)="onDeleteRoutePointsClick()" 
-                                [disabled]="!selectedPoint" 
-                                label="Удалить" class="p-button-sm p-button-danger"></button>
+                         <span *ngIf="saving" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
+                         <br/>
+                         <button pButton type="button" (click)="onAddRoutePointClick()" label="Добавить" class="p-button-sm" style="margin-left: 10px;"></button>
+                         <button pButton type="button" (click)="onDeleteRoutePointsClick()" 
+                                 [disabled]="!selectedPoint" 
+                                 label="Удалить" class="p-button-sm p-button-danger"></button>
+                         <button pButton type="button" (click)="openInYandexMaps()" 
+                                 [disabled]="!hasRoutePoints()" 
+                                 label="Яндекс" class="p-button-sm p-button-secondary" style="margin-left: 10px;"></button>
+                         <!--button pButton type="button" (click)="openIn2GIS()" 
+                                 [disabled]="!hasRoutePoints()" 
+                                 label="2ГИС" class="p-button-sm p-button-secondary"></button-->
                     </div>
                     <div class="route-list-controls" *ngIf="isMobile() && selectedPoint">
                         <button pButton type="button" icon="pi pi-arrow-up" (click)="moveSelectedPointUp()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>

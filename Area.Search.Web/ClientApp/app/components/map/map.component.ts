@@ -678,4 +678,36 @@ export class MapComponent implements OnChanges, AfterViewInit {
     trackByPointId(index: number, item: RoutePoint): number {
         return item.pointId;
     }
+
+    hasRoutePoints(): boolean {
+        return this.routeService.route.points && this.routeService.route.points.length > 0;
+    }
+
+    openInYandexMaps() {
+        const points = this.routeService.route.points;
+        if (!points || points.length === 0) return;
+
+        const validPoints = points.filter(p => p.coordinates && p.coordinates.lat && p.coordinates.lng);
+        if (validPoints.length === 0) return;
+
+        const coords = validPoints.map(p => `${p.coordinates.lat},${p.coordinates.lng}`).join('~');
+        const url = `https://yandex.ru/maps/213/moscow/?mode=routes&rtext=${coords}&rtt=mt`;
+        window.open(url, '_blank');
+    }
+
+    openIn2GIS() {
+        const points = this.routeService.route.points;
+        if (!points || points.length === 0) return;
+
+        const validPoints = points.filter(p => p.coordinates && p.coordinates.lat && p.coordinates.lng);
+        if (validPoints.length < 2) return;
+
+        const from = `${validPoints[0].coordinates.lat},${validPoints[0].coordinates.lng}`;
+        const to = validPoints.slice(1)
+            .map(p => `${p.coordinates.lat},${p.coordinates.lng}`)
+            .join(';');
+
+        const url = `https://2gis.ru/route/from/${from}/to/${to}`;
+        window.open(url, '_blank');
+    }
 }
