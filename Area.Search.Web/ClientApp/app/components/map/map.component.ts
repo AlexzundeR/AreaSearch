@@ -140,6 +140,21 @@ export class MapComponent implements OnChanges, AfterViewInit {
         this.resizing = false;
         document.removeEventListener('mousemove', this.onResizeMove);
         document.removeEventListener('mouseup', this.onResizeEnd);
+        this.savePanelState();
+    }
+
+    private savePanelState() {
+        localStorage.setItem('filterColumnWidth', this.filterColumnWidth.toString());
+        localStorage.setItem('filterPanelCollapsed', this.filterPanelCollapsed.toString());
+    }
+
+    private loadPanelState(): { width: number; collapsed: boolean } {
+        const width = localStorage.getItem('filterColumnWidth');
+        const collapsed = localStorage.getItem('filterPanelCollapsed');
+        return {
+            width: width ? parseInt(width, 10) : 500,
+            collapsed: collapsed === 'true'
+        };
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -149,7 +164,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     ngOnInit() {
-        if (window.innerWidth < 769) {
+        if (window.innerWidth >= 769) {
+            const panelState = this.loadPanelState();
+            this.filterPanelCollapsed = panelState.collapsed;
+            this.filterColumnWidth = panelState.collapsed ? 0 : panelState.width;
+        } else {
             this.filterPanelCollapsed = true;
         }
         
@@ -642,12 +661,14 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     toggleFilterPanel() {
         if (this.filterPanelCollapsed) {
+            const state = this.loadPanelState();
             this.filterPanelCollapsed = false;
-            this.filterColumnWidth = 500;
+            this.filterColumnWidth = state.width;
         } else {
             this.filterPanelCollapsed = true;
             this.filterColumnWidth = 0;
         }
+        this.savePanelState();
     }
 
     isMobile(): boolean {

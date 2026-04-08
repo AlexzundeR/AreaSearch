@@ -5,6 +5,33 @@
     overflow: hidden;
 }
 
+@media (max-width: 768px) {
+    .map-page-container {
+        position: relative;
+    }
+}
+
+.mobile-header {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        background: #6c757d;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    
+    .header-logo {
+        height: 24px;
+        margin-right: 8px;
+    }
+}
+
 .filter-column {
     display: flex;
     flex-direction: column;
@@ -276,15 +303,6 @@
 }
 
 @media (max-width: 769px) {
-    .map-page-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 100vh;
-    }
-
     .filter-column {
         position: absolute;
         top: 0;

@@ -1,3 +1,7 @@
+<div class="mobile-header" *ngIf="isMobile()">
+    <img src="favicon.ico" alt="Logo" class="header-logo">
+    <span>БГ-2026 КумКВата</span>
+</div>
 <div class="map-page-container">
     <p-toast position="top-right" [life]="5000"></p-toast>
     <div class="filter-column" 
@@ -113,14 +117,13 @@
                         <button pButton type="button" icon="pi pi-arrow-up" (click)="moveSelectedPointUp()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
                         <button pButton type="button" icon="pi pi-arrow-down" (click)="moveSelectedPointDown()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
                     </div>
-                    <div class="route-list" style="height: 100%; flex: 1;">
+                    <div class="route-list">
                         <p-orderList 
                             [value]="(routeDataSource | async) || []"
                             optionLabel="name"
                             [dragdrop]="!isMobile()"
                             [controlsPosition]="'right'"
                             [selection]="selectedPoint ? [selectedPoint] : []"
-                            style="height: 100%; width: 100%;"
                             (onReorder)="onRouteReorder()">
                             <ng-template let-item pTemplate="item" let-i="index">
                                 <div class="route-list--item" [class.selected]="selectedPoint?.pointId === item.pointId" (click)="selectPoint(item)">

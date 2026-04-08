@@ -6,3 +6,9 @@
 .body-content {
     height: 100%;
 }
+
+@media (max-width: 768px) {
+    .body-content {
+        overflow-y: auto;
+    }
+}
