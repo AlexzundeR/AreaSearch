@@ -167,9 +167,10 @@ export class MapComponent implements OnChanges, AfterViewInit {
         if (window.innerWidth >= 769) {
             const panelState = this.loadPanelState();
             this.filterPanelCollapsed = panelState.collapsed;
-            this.filterColumnWidth = panelState.collapsed ? 0 : panelState.width;
+            this.filterColumnWidth = panelState.collapsed ? 0 : (panelState.width > 0 ? panelState.width : 500);
         } else {
             this.filterPanelCollapsed = true;
+            this.filterColumnWidth = 0;
         }
         
         var state = this.stateService.loadState();
@@ -661,9 +662,14 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     toggleFilterPanel() {
         if (this.filterPanelCollapsed) {
-            const state = this.loadPanelState();
-            this.filterPanelCollapsed = false;
-            this.filterColumnWidth = state.width;
+            if (this.isMobile()) {
+                this.filterPanelCollapsed = false;
+                this.filterColumnWidth = 500;
+            } else {
+                const state = this.loadPanelState();
+                this.filterPanelCollapsed = false;
+                this.filterColumnWidth = state.width > 0 ? state.width : 500;
+            }
         } else {
             this.filterPanelCollapsed = true;
             this.filterColumnWidth = 0;
@@ -692,7 +698,12 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
         const coords = validPoints.map(p => `${p.coordinates.lat},${p.coordinates.lng}`).join('~');
         const url = `https://yandex.ru/maps/213/moscow/?mode=routes&rtext=${coords}&rtt=mt`;
-        window.open(url, '_blank');
+        
+        if (this.isMobile()) {
+            window.open(url, '_system');
+        } else {
+            window.open(url, '_blank');
+        }
     }
 
     openIn2GIS() {
@@ -708,6 +719,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
             .join(';');
 
         const url = `https://2gis.ru/route/from/${from}/to/${to}`;
-        window.open(url, '_blank');
+        
+        if (this.isMobile()) {
+            window.open(url, '_system');
+        } else {
+            window.open(url, '_blank');
+        }
     }
 }
