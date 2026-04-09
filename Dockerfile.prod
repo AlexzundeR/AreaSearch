@@ -1,0 +1,9 @@
+# Build runtime image - copies pre-built files
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+
+# Copy pre-built application files
+COPY .build/ .
+
+ENV ASPNETCORE_URLS=http://*:$PORT
+ENTRYPOINT ["dotnet", "Area.Search.Web.dll"]

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+﻿import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable, BehaviorSubject } from "rxjs";
 import { MapData, MapDataPoint } from "../models/map-data.model";
@@ -13,12 +13,12 @@ export class MapService {
     }
 
     private loadData() {
-        this.http.get<MapData[]>('/dist/data/all-2023.json').subscribe(data => {
+        this.http.get<MapData[]>('/dist/data/all-2026.json').subscribe(data => {
             this.geoData = data;
             this.dataLoaded = true;
         });
 
-        this.http.get<string[]>('/dist/data/all-types-2023.json').subscribe(types => {
+        this.http.get<string[]>('/dist/data/all-types-2026.json').subscribe(types => {
             this.allTypes = types;
             this.allTypesSubj.next(types);
         });

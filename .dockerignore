@@ -1,1 +1,11 @@
 node_modules
+.git
+*.md
+Area.Search.DataGenerator
+Area.Search.sln
+.gitignore
+Dockerfile
+Dockerfile.prod
+build.sh
+build.ps1
+build.cmd

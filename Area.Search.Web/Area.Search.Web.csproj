@@ -9,6 +9,7 @@
   <ItemGroup>
     <Content Include="Views\**\*.cshtml" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
