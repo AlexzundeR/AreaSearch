@@ -12,7 +12,8 @@ import { Observable, map } from "rxjs";
 @Component({
     selector: 'map',
     templateUrl: './map.component.html',
-    styleUrls: ['./map.component.css']
+    styleUrls: ['./map.component.css'],
+    standalone: false
 })
 export class MapComponent implements OnChanges, AfterViewInit {
 
@@ -20,6 +21,8 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     mapData: MapData[] = [];
     mapDataSource: MapData[] = [];
+    totalResultsCount: number = 0;
+    readonly MAX_DISPLAY_ITEMS = 1000;
     allTypes: string[] = [];
     @Input() searchString: string = "";
     selectedTypes: string[] = [];
@@ -175,7 +178,6 @@ export class MapComponent implements OnChanges, AfterViewInit {
         
         var state = this.stateService.loadState();
         if (state) {
-            this.mapData = state.mapData;
             if (this.mapControl) {
                 this.mapControl.center = state.center || this.defaultCenter;
             }
@@ -450,7 +452,10 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
         this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes, mapBounds, filterigCallback)
             .then((data) => {
-                this.mapData = data;
+                this.totalResultsCount = data.length;
+                this.mapData = data.length > this.MAX_DISPLAY_ITEMS 
+                    ? data.slice(0, this.MAX_DISPLAY_ITEMS) 
+                    : data;
                 this.updateDataSource();
                 this.listIndicateLoading(false);
                 this.updateState();
@@ -464,11 +469,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
                             });
                         }
                     });
-                    const oldSelectedTypes = [...this.selectedTypes];
-                    const oldIgnoredTypes = [...this.ignoredTypes];
+                    const oldSelectedTypes = [...(this.selectedTypes || [])];
+                    const oldIgnoredTypes = [...(this.ignoredTypes || [])];
                     this.allTypes = Array.from(newTypes).sort();
                     this.selectedTypes = oldSelectedTypes.filter(t => this.allTypes.includes(t));
-                    this.ignoredTypes = oldIgnoredTypes.filter(t => this.allTypes.includes(t));
+                    this.ignoredTypes = oldIgnoredTypes ? oldIgnoredTypes.filter(t => this.allTypes.includes(t)) : [];
                 }
 
             });
@@ -480,7 +485,6 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     updateState() {
         this.stateService.saveState({
-            mapData: this.mapData,
             center: this.mapCenter,
             zoom: this.mapZoom,
             searchString: this.searchString,

@@ -1,122 +1,112 @@
+/* Compact theme - только компактные переопределения размеров */
 :root {
-    --spacing: 0.5rem;
-    --inline-spacing: 0.25rem;
-    --padding: 0.25rem;
-    --padding-x: 0.25rem;
-    --padding-y: 0.125rem;
-    --padding-top: 0.125rem;
-    --padding-bottom: 0.125rem;
-    --padding-left: 0.25rem;
-    --padding-right: 0.25rem;
-    --content-padding: 0.25rem;
-    --content-padding-x: 0.25rem;
-    --content-padding-y: 0.125rem;
-    --input-padding: 0.125rem 0.25rem;
-    --input-text-padding: 0.125rem 0.25rem;
-    --button-padding: 0.125rem 0.25rem;
-    --list-item-padding: 0.125rem 0.25rem;
-    --header-padding: 0.25rem;
-    --panel-content-padding: 0.25rem;
-    --tab-view-panel-padding: 0.25rem;
-    --tab-header-padding: 0.125rem 0.25rem;
-    --menu-padding: 0.125rem 0;
-    --menuitem-padding: 0.125rem 0.25rem;
-    --menuitem-link-padding: 0.125rem 0.25rem;
-    --input-height: 30px;
-    --input-font-size: 13px;
-    --font-size: 13px;
-    --font-size-sm: 12px;
-    --font-size-md: 13px;
-    --border-radius: 3px;
-    --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #3B82F6;
-    --text-xl: 14px;
-    --text-lg: 13px;
-    --text-md: 13px;
-    --text-sm: 12px;
+    --p-button-sm-padding: 0.25rem 0.5rem;
+    --p-button-sm-font-size: 13px;
+    --p-inputtext-padding: 0.25rem 0.5rem;
+    --p-inputtext-font-size: 13px;
+    --p-multiselect-min-height: 30px;
+    --p-checkbox-width: 18px;
+    --p-checkbox-height: 18px;
+    --p-tabs-tab-padding: 0.375rem 0.75rem;
+    --p-tabs-panel-padding: 0.25rem;
+    --p-listbox-item-padding: 0.125rem 0.25rem;
+    --p-listbox-item-min-height: 50px;
+    --p-orderlist-item-padding: 0.125rem 0.25rem;
+    --p-orderlist-item-min-height: 50px;
 }
 
+/* Компактные кнопки */
 .p-button.p-button-sm {
-    padding: 0.4rem 0.3rem;
-    font-size: 14px;
-    margin-right: 5px;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 13px !important;
+    margin-right: 3px;
 }
 
+/* Компактный чекбокс */
 .p-checkbox .p-checkbox-box {
-    width: 20px;
-    height: 20px;
+    width: 18px !important;
+    height: 18px !important;
 }
 
-.p-checkbox-label{
-    margin-bottom: 0px;
-    font-size: 14px;
-    margin-bottom: 3px;
+.p-checkbox + label {
+    font-size: 13px !important;
+    margin-bottom: 2px !important;
+    margin-left: 4px !important;
+    vertical-align: middle;
+    cursor: pointer;
 }
 
+/* Компактные инпуты */
 .p-inputtext {
-    padding: 0.125rem 0.25rem;
-    font-size: 14px;
-    margin-bottom: 2px;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 13px !important;
+    margin-bottom: 2px !important;
 }
 
+/* Компактный multiselect */
 .p-multiselect {
-    min-height: 30px;
-    margin-bottom: 2px;
+    min-height: 30px !important;
+    margin-bottom: 2px !important;
 }
 
 .p-multiselect .p-multiselect-label {
-    padding: 0.125rem 0.25rem;
-    font-size: 14px;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 13px !important;
 }
 
 .p-multiselect-item {
-    font-size: 14px;
+    font-size: 13px !important;
 }
 
 .p-multiselect-token {
-    font-size: 14px;
+    font-size: 12px !important;
 }
 
 .p-multiselect-header {
-    padding: 0.125rem;
+    padding: 0.125rem !important;
 }
 
-.p-tabview .p-tabview-panels {
-    padding: 0.25rem;
+/* Компактные табы */
+.p-tabs .p-tabpanels {
+    padding: 0.25rem !important;
 }
 
-.p-tabview .p-tabview-nav {
-    margin-bottom: 0;
+.p-tabs .p-tablist-tabs {
+    gap: 0 !important;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link {
-    padding: 0.5rem;
-    font-size: 14px;
+.p-tabs .p-tablist-tab {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 13px !important;
 }
 
-.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-    padding: 0.5rem;
-}
-
+/* Компактный listbox */
 .p-listbox .p-listbox-list {
-    padding: 0.125rem;
+    padding: 0.125rem !important;
 }
 
 .p-listbox .p-listbox-item {
-    padding: 0;
-    font-size: 14px;
-    min-height: 55px;
+    padding: 0.125rem 0.25rem !important;
+    font-size: 13px !important;
+    min-height: 50px !important;
 }
 
+/* Компактный orderlist */
 .p-orderlist .p-orderlist-list {
-    padding: 0.125rem;
+    padding: 0.125rem !important;
 }
 
 .p-orderlist .p-orderlist-item {
-    padding: 0;
-    font-size: 14px;
-    min-height: 55px;
+    padding: 0.125rem 0.25rem !important;
+    font-size: 13px !important;
+    min-height: 50px !important;
 }
 
+.p-orderlist .p-orderlist-controls {
+    display: none !important;
+}
+
+/* Компактные элементы списка */
 .map-data-item {
     display: flex;
     flex-direction: column;
@@ -124,22 +114,83 @@
     width: 100%;
 }
 
-.map-data-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 16px;
+.map-data-item > div:first-child {
+    font-size: 14px;
     font-weight: 500;
 }
 
-.map-data-types {
+.map-data-item > div:last-child {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
 }
 
-.map-data-types .badge {
+.map-data-item .badge {
     font-size: 11px;
     padding: 1px 4px;
     margin: 0;
+    border-radius: 3px;
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+/* Компактные поля маршрута */
+.route-item-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.route-item-fields input,
+.route-item-fields textarea {
+    width: 100%;
+    padding: 2px 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.route-item-fields input:focus,
+.route-item-fields textarea:focus {
+    outline: 2px solid blue;
+    border-color: blue;
+}
+
+.route-item-fields input[readonly],
+.route-item-fields textarea[readonly] {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.route-item-fields input::placeholder,
+.route-item-fields textarea::placeholder {
+    font-size: 12px;
+}
+
+/* Стили для route list */
+.route-list--item {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding: 4px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.route-list--item.selected {
+    background-color: #e3f2fd;
+}
+
+.route-list--item input,
+.route-list--item textarea {
+    width: 100%;
+    padding: 2px 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.route-list--item input:focus,
+.route-list--item textarea:focus {
+    outline: 2px solid blue;
 }

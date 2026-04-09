@@ -46,28 +46,35 @@
     min-height: 0;
     padding: 10px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-:host ::ng-deep .p-tabview {
+/* PrimeNG 21 Tabs */
+:host ::ng-deep .p-tabs {
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-:host ::ng-deep .p-tabview .p-tabview-nav-container {
+:host ::ng-deep .p-tabs .p-tablist {
     flex: 0 0 auto;
 }
 
-:host ::ng-deep .p-tabview .p-tabview-panels {
+:host ::ng-deep .p-tabs .p-tabpanels {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-:host ::ng-deep .p-tabview .p-tabview-panel {
-    height: 100%;
-    display:flex; 
-    flex-direction:column;
+:host ::ng-deep .p-tabs .p-tabpanel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .filter-controls {
@@ -77,39 +84,59 @@
 
 .filter-list {
     flex: 1;
-    min-height: 200px;
+    min-height: 0;
     overflow: hidden;
     margin-top: 5px;
+    display: flex;
+    flex-direction: column;
 }
 
+/* Listbox с явным height на всех уровнях */
 :host ::ng-deep .filter-list .p-listbox {
     height: 100% !important;
+    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list-container {
     flex: 1 !important;
+    min-height: 0 !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+}
+
+:host ::ng-deep .filter-list .p-listbox .p-scroller {
+    flex: 1 !important;
+    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-scroller-viewport {
     flex: 1 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-scroller-content {
     overflow-y: auto !important;
+    min-height: 0 !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list {
     max-height: none !important;
+    min-height: 0 !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list-wrapper {
     max-height: none !important;
     flex: 1 !important;
+    min-height: 0 !important;
+    height: auto !important;
 }
 
 .filter-container input[type="checkbox"]{
@@ -123,6 +150,7 @@
 }
 
 .route-list {
+    margin-top: 5px;
     flex: 1;
     min-height: 200px;
     overflow: hidden;
@@ -338,7 +366,7 @@
 }
 
 .inline-checkbox {
-    display: inline;
+    display: inline-flex;
     margin-left: 5px;
 }
 

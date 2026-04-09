@@ -5,7 +5,21 @@ import { Injectable } from "@angular/core";
 })
 export class StateService {
     saveState(state: any) {
-        localStorage.setItem('state', JSON.stringify(state));
+        try {
+            const serialized = JSON.stringify(state);
+            if (serialized.length > 4000000) {
+                console.warn('State too large, trimming mapData');
+                const trimmed = { ...state, mapData: [] };
+                localStorage.setItem('state', JSON.stringify(trimmed));
+            } else {
+                localStorage.setItem('state', serialized);
+            }
+        } catch (e) {
+            console.error('Failed to save state:', e);
+            try {
+                localStorage.removeItem('state');
+            } catch {}
+        }
     }
 
     loadState() {

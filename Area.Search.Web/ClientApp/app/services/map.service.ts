@@ -15,7 +15,7 @@ export class MapService {
     private loadData() {
         this.http.get<MapData[]>('/dist/data/all-2026.json').subscribe(data => {
             this.geoData = data;
-            this.dataLoaded = true;
+            this.dataLoadedSubj.next(true);
         });
 
         this.http.get<string[]>('/dist/data/all-types-2026.json').subscribe(types => {
@@ -24,7 +24,13 @@ export class MapService {
         });
     }
 
-    dataLoaded: boolean = false;
+    private dataLoadedSubj: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+    get dataLoaded$(): Observable<boolean> {
+        return this.dataLoadedSubj.asObservable();
+    }
+    get dataLoaded(): boolean {
+        return this.dataLoadedSubj.value;
+    }
 
     geoData: MapData[] = [];
 

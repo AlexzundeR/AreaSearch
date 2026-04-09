@@ -3,16 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { GoogleMapsModule } from '@angular/google-maps';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
-import { CheckboxModule } from 'primeng/checkbox';
+import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
@@ -48,24 +50,29 @@ export function loadGoogleMaps() {
         CommonModule,
         HttpClientModule,
         FormsModule,
-        BrowserAnimationsModule,
         RouterModule.forRoot([
             {path: '', component: MapComponent, pathMatch: 'full'},
             {path: 'map', component: MapComponent},
             {path: '**', redirectTo: '/map'}
         ]),
-        TabViewModule,
+        TabsModule,
         MultiSelectModule,
         ListboxModule,
         OrderListModule,
         TableModule,
         InputTextModule,
-        CheckboxModule,
+        Checkbox,
         ButtonModule,
         GoogleMapsModule,
         ToastModule
     ],
     providers: [
+        provideAnimations(),
+        providePrimeNG({
+            theme: {
+                preset: Aura
+            }
+        }),
         { provide: APP_INITIALIZER, useFactory: loadGoogleMaps, multi: true },
         MapService,
         StateService,
