@@ -7,7 +7,10 @@ import { RouteService, ServiceError } from "../../services/route.service";
 import { Route, RoutePoint } from "../../models/route.type";
 import { RouteDrawingService } from "../../services/routeDrawing.service";
 import { MessageService } from 'primeng/api';
-import { Observable, map } from "rxjs";
+import { Observable, map, tap } from "rxjs";
+import { TerraDraw } from 'terra-draw';
+import { TerraDrawGoogleMapsAdapter } from 'terra-draw-google-maps-adapter';
+import { TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
 
 @Component({
     selector: 'map',
@@ -16,8 +19,6 @@ import { Observable, map } from "rxjs";
     standalone: false
 })
 export class MapComponent implements OnChanges, AfterViewInit {
-
-    polygon: any;
 
     mapData: MapData[] = [];
     mapDataSource: MapData[] = [];
@@ -54,8 +55,63 @@ export class MapComponent implements OnChanges, AfterViewInit {
     mapCenter!: any;
     mapZoom!: any;
     lastError?: ServiceError = { error: "ERROR", description: "ERROR" };
-    drawingManager!: google.maps.drawing.DrawingManager;
     initialPolygonPoints: number[][] = [];
+    terradrawPolygonCoords: number[][] | null = null;
+    private terraDraw: TerraDraw | null = null;
+    public get hasTerraDraw(): boolean { return this.terraDraw !== null; }
+    private drawnPolygonId: string | null = null;
+    currentDrawMode: string = 'static';
+    private searchTimeout: any = null;
+    private isDrawingComplete: boolean = false;
+    private stateSaveTimeout: any = null;
+    private cachedPolygon: google.maps.Polygon | null = null;
+
+    private updateCachedPolygon() {
+        if (!this.terradrawPolygonCoords || this.terradrawPolygonCoords.length < 3) {
+            this.cachedPolygon = null;
+            return;
+        }
+        const polygonPath = this.terradrawPolygonCoords.map(c => new google.maps.LatLng(c[0], c[1]));
+        this.cachedPolygon = new google.maps.Polygon({ paths: polygonPath });
+    }
+
+    private debouncedUpdateState() {
+        if (this.stateSaveTimeout) clearTimeout(this.stateSaveTimeout);
+        this.stateSaveTimeout = setTimeout(() => {
+            this.updateState();
+        }, 500);
+    }
+
+    private renderPolygonToTerraDraw(coords: number[][]) {
+        if (!this.terraDraw || !coords || coords.length < 3) return;
+
+        // coords are in [lat, lng] format, convert to [lng, lat] for TerraDraw
+        const coordsLngLat = coords.map(c => [c[1], c[0]]);
+        
+        // Need to add mode property for TerraDraw to accept the feature
+        const polygonGeoJSON = {
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [coordsLngLat]
+            },
+            properties: {
+                mode: 'polygon'
+            }
+        };
+
+        // Switch to polygon mode before adding
+        this.terraDraw.setMode('polygon');
+        
+        this.terraDraw.addFeatures([polygonGeoJSON as any]);
+        
+        // Switch back to static mode
+        this.terraDraw.setMode('static');
+        
+        this.terradrawPolygonCoords = coords;
+        this.hasDrawnPolygon = true;
+        this.updateCachedPolygon();
+    }
 
     // Google Maps options
     mapOptions: google.maps.MapOptions = {
@@ -84,9 +140,27 @@ export class MapComponent implements OnChanges, AfterViewInit {
         this.mapService.allTypesObs.subscribe((types) => {
             this.allTypes = types.sort();
         });
+        
+        this.mapService.dataLoaded$.subscribe((loaded) => {
+            if (loaded) {
+                const hasSearchCriteria = this.searchString || 
+                    (this.selectedTypes && this.selectedTypes.length > 0) || 
+                    (this.ignoredTypes && this.ignoredTypes.length > 0) ||
+                    this.useMapPolygon;
+                
+                if (hasSearchCriteria) {
+                    this.onSearchClick();
+                }
+            }
+        });
         this.routeDataSource = this.routeService.$routePoints.pipe(map(p => p));
 
-        this.routeService.$saving.subscribe(saving => this.saving = saving);
+        this.routeService.$saving.pipe(
+            tap(saving => {
+                this.cdr.markForCheck();
+                this.saving = saving;
+            })
+        ).subscribe();
 
         this.routeService.$errors.subscribe((error) => {
             if (error.error === 'concurrent_access') {
@@ -219,43 +293,90 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     onSearchStringChanged(e: any) {
+        this.debouncedUpdateState();
     }
 
     typeSelectionChanged() {
+        this.debouncedUpdateState();
     }
 
     ignoredTypeSelectionChanged() {
+        this.debouncedUpdateState();
     }
 
     onUseMapBoundsChanged() {
         this.onSearchClick();
+        this.debouncedUpdateState();
     }
 
     onUseMapPolygonChanged() {
         this.refreshDrawingTools();
         this.redrawPolygon();
         this.onSearchClick();
+        this.debouncedUpdateState();
     }
 
     refreshDrawingTools() {
-        if (!this.map) return;
-        
-        if (!this.drawingManager) {
-            return;
-        }
+        if (!this.map || !this.terraDraw) return;
 
-        if (this.useMapPolygon) {
-            this.drawingManager.setMap(this.map);
-        } else {
-            this.drawingManager.setMap(null);
+        // TerraDraw инструменты рисования всегда активны
+        this.terraDraw.setMode(this.currentDrawMode);
+    }
+
+    setDrawMode(mode: string) {
+        const wasDrawing = this.currentDrawMode === 'polygon';
+        const snapshot = this.terraDraw?.getSnapshot() || [];
+        const hasPolygon = snapshot.some((f: any) => f.geometry.type === 'Polygon');
+        
+        this.currentDrawMode = mode;
+        if (this.terraDraw) {
+            this.terraDraw.setMode(mode);
+            
+            // При переходе с рисования на выбор после создания полигона - триггерим поиск
+            if (wasDrawing && mode === 'select' && hasPolygon) {
+                this.refreshSearch();
+            }
         }
     }
 
-    drawingPolygonCompleted(event: any) {
-        var poly = event.overlay.getPath();
-        if (event.type == 'polygon') {
-            event.overlay.setMap(null);
-            this.redrawPolygon(event.overlay.getPath().getArray());
+    deleteSelectedPolygon() {
+        if (!this.terraDraw) return;
+        
+        const snapshot = this.terraDraw.getSnapshot();
+        const polygonFeature = snapshot.find((f: any) => f.geometry.type === 'Polygon');
+        
+        if (polygonFeature && polygonFeature.id) {
+            this.terraDraw.removeFeatures([polygonFeature.id]);
+            this.terradrawPolygonCoords = null;
+            this.hasDrawnPolygon = false;
+            this.updateCachedPolygon();
+            this.onSearchClick();
+            this.debouncedUpdateState();
+        }
+    }
+
+    // Track polygon state for canDraw
+    private hasDrawnPolygon: boolean = false;
+
+    get canDraw(): boolean {
+        if (!this.terraDraw) return false;
+        const snapshot = this.terraDraw.getSnapshot();
+        const hasPolygon = snapshot.some((f: any) => f.geometry.type === 'Polygon');
+        return !hasPolygon;
+    }
+
+    clearDrawing() {
+        if (this.terraDraw) {
+            const snapshot = this.terraDraw.getSnapshot();
+            const polygonIds = snapshot
+                .filter((f: any) => f.geometry.type === 'Polygon')
+                .map((f: any) => f.id);
+            
+            if (polygonIds.length > 0) {
+                this.terraDraw.removeFeatures(polygonIds);
+            }
+            this.terradrawPolygonCoords = null;
+            this.hasDrawnPolygon = false;
             this.onSearchClick();
         }
     }
@@ -279,29 +400,164 @@ export class MapComponent implements OnChanges, AfterViewInit {
         this.routeDrawingService.setMap(mapInstance);
         this.map.addListener('bounds_changed', this.mapChanged);
 
-        this.drawingManager = new google.maps.drawing.DrawingManager({
-            drawingMode: null,
-            drawingControl: true,
-            drawingControlOptions: {
-                drawingModes: [google.maps.drawing.OverlayType.POLYGON]
-            },
-            polygonOptions: {
-                strokeColor: '#0000FF',
-                strokeOpacity: 0.8,
-                strokeWeight: 3,
-                fillColor: '#0000FF',
-                fillOpacity: 0.35,
-                editable: true
+        // Initialize TerraDraw after a delay to ensure map is fully rendered
+        setTimeout(() => {
+            this.initTerraDraw();
+            
+            const hasSearchCriteria = this.searchString || 
+                (this.selectedTypes && this.selectedTypes.length > 0) || 
+                (this.ignoredTypes && this.ignoredTypes.length > 0) ||
+                this.useMapPolygon;
+            
+            if (this.initialPolygonPoints && this.initialPolygonPoints.length) {
+                setTimeout(() => {
+                    this.renderPolygonToTerraDraw(this.initialPolygonPoints);
+                    this.onSearchClick();
+                }, 300);
+            } else if (hasSearchCriteria) {
+                this.onSearchClick();
             }
-        });
 
-        this.drawingManager.addListener('overlaycomplete', (e: any) => { this.drawingPolygonCompleted(e) });
+            this.refreshDrawingTools();
+        }, 500);
+    }
 
-        if (this.initialPolygonPoints && this.initialPolygonPoints.length) {
-            this.redrawPolygon(this.initialPolygonPoints.map((e: number[]) => { return new google.maps.LatLng(e[0], e[1]) }));
+    private initTerraDraw(): boolean {
+        if (!this.map) {
+            return false;
         }
 
-        this.refreshDrawingTools();
+        // Prevent re-initialization
+        if (this.terraDraw) {
+            return true;
+        }
+
+        // Try to get the map element from the element ref or document
+        let mapElement: HTMLElement | null = null;
+        
+        // First try getDiv() - works in most cases
+        const mapDiv = this.map.getDiv();
+        if (mapDiv instanceof HTMLElement) {
+            mapElement = mapDiv;
+        }
+        
+        // Fallback: try to find by ID or query
+        if (!mapElement) {
+            const mapContainer = document.querySelector('.angular-google-map-container') as HTMLElement;
+            if (mapContainer) {
+                mapElement = mapContainer;
+            }
+        }
+        
+        // Fallback: try to find the map div inside the component
+        if (!mapElement) {
+            const mapDivById = document.getElementById('terradraw-map');
+            if (mapDivById instanceof HTMLElement) {
+                mapElement = mapDivById;
+            }
+        }
+        
+        if (!mapElement) {
+            setTimeout(() => this.initTerraDraw(), 200);
+            return false;
+        }
+
+        try {
+            this.terraDraw = new TerraDraw({
+                adapter: new TerraDrawGoogleMapsAdapter({
+                    map: this.map,
+                    lib: google.maps
+                }),
+                modes: [
+                    new TerraDrawSelectMode({
+                        flags: {
+                            polygon: {
+                                feature: {
+                                    draggable: true,
+                                    rotateable: true,
+                                    coordinates: {
+                                        midpoints: true,
+                                        draggable: true,
+                                        deletable: true,
+                                    },
+                                },
+                            },
+                        },
+                    }),
+                    new TerraDrawPolygonMode({
+                        styles: {
+                            fillColor: '#0000FF',
+                            outlineColor: '#0000FF',
+                            fillOpacity: 0.35,
+                            outlineOpacity: 0.8,
+                            outlineWidth: 3
+                        }
+                    })
+                ]
+            });
+
+            this.terraDraw.start();
+
+            // Set initial mode after start
+            this.terraDraw.setMode(this.currentDrawMode);
+
+            // Listen for polygon changes - при редактировании с debounce
+            this.terraDraw.on('change', (ids: any, type: string) => {
+                const snapshot = this.terraDraw!.getSnapshot();
+                const polygonFeature = snapshot.find((f: any) => f.geometry.type === 'Polygon');
+                
+                if (!polygonFeature) {
+                    this.terradrawPolygonCoords = null;
+                    this.hasDrawnPolygon = false;
+                    this.isDrawingComplete = false;
+                    this.updateCachedPolygon();
+                    this.triggerSearch();
+                    this.debouncedUpdateState();
+                    return;
+                }
+                
+                this.hasDrawnPolygon = true;
+                this.drawnPolygonId = polygonFeature.id;
+                
+                // TerraDraw returns [lng, lat], convert to [lat, lng] for consistency
+                const newCoords = polygonFeature.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]]);
+                this.terradrawPolygonCoords = newCoords;
+                this.updateCachedPolygon();
+                
+                // При редактировании - debounced search и сохранение
+                if (type === 'update') {
+                    this.triggerSearch();
+                    this.debouncedUpdateState();
+                }
+            });
+            
+            // При завершении рисования (пользователь закончил рисовать полигон)
+            this.terraDraw.on('finish', () => {
+                if (this.currentDrawMode === 'polygon') {
+                    this.setDrawMode('select');
+                    this.refreshSearch();
+                    this.debouncedUpdateState();
+                }
+            });
+            
+            console.log('TerraDraw initialized successfully');
+            return true;
+        } catch (e) {
+            console.error('Failed to initialize TerraDraw:', e);
+            return false;
+        }
+    }
+
+    private triggerSearch() {
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.onSearchClick();
+        }, 500);
+    }
+
+    refreshSearch() {
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.onSearchClick();
     }
 
     onMapReady(event: any) {
@@ -313,7 +569,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     onMarkerInitialized(marker: MapMarker, event: any) {
         marker.originalMarker = event;
-        event.addListener('click', () => {
+        event.addListener('mapClick', () => {
             this.onMarkerClick(marker);
         });
     }
@@ -322,67 +578,19 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     redrawPolygon(points?: google.maps.LatLng[]) {
-        if (this.polygon) {
-            this.polygon.setMap(null);
-        }
-
-        if (!points && !this.polygon) {
-            return;
-        }
-
-        this.polygon = new google.maps.Polygon({
-            paths: points || this.polygon.getPath(),
-            strokeColor: '#0000FF',
-            strokeOpacity: 0.8,
-            strokeWeight: 3,
-            fillColor: '#0000FF',
-            fillOpacity: 0.35,
-            editable: true
-        });
-
-        this.drawingManager.setDrawingMode(null);
-
-        if (!this.useMapPolygon) {
-            return;
-        }
-
-        this.polygon.setMap(this.map);
-
-        var path = this.polygon.getPath();
-
-        google.maps.event.addListener(this.polygon, "dblclick", (event: any) => {
-            if (event.vertex && this.polygon.getPath().length > 3) {
-                this.polygon.getPath().removeAt(event.vertex);
-            } else {
-                this.polygon.setMap(null);
-                this.polygon = null;
-
-                this.onSearchClick();
-            }
-        });
-
-        google.maps.event.addListener(path, "insert_at", () => {
-            this.onSearchClick();
-        });
-        google.maps.event.addListener(path, "set_at", () => {
-            this.onSearchClick();
-        });
-        google.maps.event.addListener(path, "remove_at", () => {
-            this.onSearchClick();
-        });
     }
 
     mapChanged() {
         this.mapCenter = (this.map as google.maps.Map).getCenter();
         this.mapZoom = (this.map as google.maps.Map).getZoom();
-        this.updateState();
+        this.debouncedUpdateState();
         if (this.useMapBounds && !this.useMapPolygon) {
             this.onSearchClick();
         }
     }
 
     selectedMapDataChanged(e: any) {
-        this.updateState();
+        this.debouncedUpdateState();
     }
 
     onShowOnMapClick() {
@@ -410,11 +618,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     filterPointByPolygon(p: number[]) {
-        if (!this.polygon) {
+        // Use cached polygon for performance
+        if (!this.cachedPolygon) {
             return true;
         }
-
-        return google.maps.geometry.poly.containsLocation(new google.maps.LatLng(p[0], p[1]), this.polygon);
+        return google.maps.geometry.poly.containsLocation(new google.maps.LatLng(p[0], p[1]), this.cachedPolygon);
     }
 
     markerAdded(event: any) {
@@ -439,10 +647,11 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
         if (this.useMapPolygon) {
             filterigCallback = this.filterPointByPolygon.bind(this);
-            if (this.polygon) {
+            if (this.terradrawPolygonCoords && this.terradrawPolygonCoords.length > 0) {
                 let bounds = new google.maps.LatLngBounds();
-                this.polygon.getPath().forEach(function (latlng: any) {
-                    bounds.extend(latlng);
+                // terradrawPolygonCoords is already in [lat, lng] format
+                this.terradrawPolygonCoords.forEach((coord: number[]) => {
+                    bounds.extend(new google.maps.LatLng(coord[0], coord[1]));
                 });
                 var ne = bounds.getNorthEast();
                 var sw = bounds.getSouthWest();
@@ -456,9 +665,17 @@ export class MapComponent implements OnChanges, AfterViewInit {
                 this.mapData = data.length > this.MAX_DISPLAY_ITEMS 
                     ? data.slice(0, this.MAX_DISPLAY_ITEMS) 
                     : data;
+                
+                if (this.mapData) {
+                    this.mapData.forEach(item => {
+                        if (item.data) {
+                            item.dataTypesTitle = item.data.map((d: any) => d.type).join(', ');
+                        }
+                    });
+                }
+                
                 this.updateDataSource();
                 this.listIndicateLoading(false);
-                this.updateState();
 
                 if (this.mapData) {
                     var newTypes = new Set<string>();
@@ -475,7 +692,8 @@ export class MapComponent implements OnChanges, AfterViewInit {
                     this.selectedTypes = oldSelectedTypes.filter(t => this.allTypes.includes(t));
                     this.ignoredTypes = oldIgnoredTypes ? oldIgnoredTypes.filter(t => this.allTypes.includes(t)) : [];
                 }
-
+                
+                this.cdr.detectChanges();
             });
     }
 
@@ -484,6 +702,18 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     updateState() {
+        // Get polygon coordinates from TerraDraw if available
+        // Only save if polygon was already loaded (not during initial load)
+        let polygonCoords: number[][] | null = null;
+        if (this.terraDraw && this.terradrawPolygonCoords) {
+            const snapshot = this.terraDraw.getSnapshot();
+            const polygonFeature = snapshot.find((f: any) => f.geometry.type === 'Polygon');
+            if (polygonFeature) {
+                // Convert from [lng, lat] to [lat, lng] for storage
+                polygonCoords = polygonFeature.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]]);
+            }
+        }
+
         this.stateService.saveState({
             center: this.mapCenter,
             zoom: this.mapZoom,
@@ -493,7 +723,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
             useBoundaries: this.useMapBounds,
             selectedMapData: this.selectedMapData,
             usePolygon: this.useMapPolygon,
-            polygon: this.polygon ? this.polygon.getPath().getArray().map((e: any) => { return [e.lat(), e.lng()] }) : null
+            polygon: polygonCoords
         })
     }
 
@@ -620,13 +850,33 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     pointNameChanged(newValue: string, point: RoutePoint) {
+        console.log('pointNameChanged:', newValue, 'current:', point.name);
         if (point.name === newValue) {
             return;
         }
         point._pendingName = newValue;
     }
 
+    onKeyPress(event: KeyboardEvent) {
+        console.log('KeyPress:', event.key, 'code:', event.code);
+    }
+
+    onInputEvent(event: Event, point: RoutePoint) {
+        const target = event.target as HTMLInputElement;
+        console.log('Input event:', target.value);
+        point._pendingName = target.value;
+        point.name = target.value;
+    }
+
+    onDescriptionInputEvent(event: Event, point: RoutePoint) {
+        const target = event.target as HTMLTextAreaElement;
+        console.log('Description Input event:', target.value);
+        point._pendingDescription = target.value;
+        point.description = target.value;
+    }
+
     pointDescriptionChanged(newValue: string, point: RoutePoint) {
+        console.log('pointDescriptionChanged:', newValue, 'current:', point.description);
         if (point.description === newValue) {
             return;
         }

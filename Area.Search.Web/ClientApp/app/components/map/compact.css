@@ -86,8 +86,32 @@
 }
 
 .p-listbox .p-listbox-item {
-    padding: 0.125rem 0.25rem !important;
+    padding: 0.375rem 0.5rem !important;
     font-size: 13px !important;
+    height: 100% !important;
+    min-height: 50px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    box-sizing: border-box !important;
+}
+
+.p-listbox .p-listbox-item > div {
+    min-height: 40px;
+    height: 100%;
+}
+
+.p-listbox .p-ripple {
+    height: 100% !important;
+    display: flex !important;
+}
+
+.p-listbox-option {
+    height: 100% !important;
+    min-height: 50px !important;
+}
+
+.p-listbox-option.cdk-drag-disabled {
+    height: 100% !important;
     min-height: 50px !important;
 }
 
@@ -97,8 +121,9 @@
 }
 
 .p-orderlist .p-orderlist-item {
-    padding: 0.125rem 0.25rem !important;
+    padding: 0.375rem 0.5rem !important;
     font-size: 13px !important;
+    height: 100% !important;
     min-height: 50px !important;
 }
 
@@ -112,26 +137,53 @@
     flex-direction: column;
     gap: 2px;
     width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.map-data-item > div:first-child {
+.map-data-item::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+}
+
+.map-data-name {
     font-size: 14px;
     font-weight: 500;
+    line-height: 20px;
+    height: 20px;
+    flex: 1;
+}
+
+.map-data-types {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    height: 20px;
+    max-width: 100%;
+    flex-shrink: 0;
 }
 
 .map-data-item > div:last-child {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 2px;
 }
 
 .map-data-item .badge {
     font-size: 11px;
-    padding: 1px 4px;
+    padding: 0 4px;
     margin: 0;
     border-radius: 3px;
     background-color: #17a2b8 !important;
     color: white !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 16px;
+    height: 16px;
 }
 
 /* Компактные поля маршрута */
@@ -140,6 +192,8 @@
     flex-direction: column;
     gap: 2px;
     flex: 1;
+    position: relative;
+    z-index: 10;
 }
 
 .route-item-fields input,
@@ -150,6 +204,10 @@
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 3px;
+    z-index: 100;
+    position: relative;
+    pointer-events: auto;
+    background: white;
 }
 
 .route-item-fields input:focus,
@@ -160,8 +218,10 @@
 
 .route-item-fields input[readonly],
 .route-item-fields textarea[readonly] {
-    background-color: transparent;
-    border-color: transparent;
+    background-color: white !important;
+    border-color: #ccc !important;
+    color: #333 !important;
+    pointer-events: auto !important;
 }
 
 .route-item-fields input::placeholder,
@@ -176,6 +236,8 @@
     gap: 4px;
     padding: 4px;
     border-bottom: 1px solid #e0e0e0;
+    position: relative;
+    z-index: 1;
 }
 
 .route-list--item.selected {

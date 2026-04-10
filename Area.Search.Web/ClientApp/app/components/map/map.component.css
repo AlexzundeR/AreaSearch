@@ -3,6 +3,48 @@
     height: 100%;
     width: 100%;
     overflow: hidden;
+    position: relative;
+}
+
+.terradraw-toolbar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    gap: 5px;
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.terradraw-toolbar button {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.terradraw-toolbar button:hover {
+    background: #f0f0f0;
+}
+
+.terradraw-toolbar button.active {
+    background: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.terradraw-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.terradraw-toolbar button:active {
+    background: #0056b3;
 }
 
 @media (max-width: 768px) {
@@ -89,6 +131,7 @@
     margin-top: 5px;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 /* Listbox с явным height на всех уровнях */
@@ -97,39 +140,50 @@
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow-x: hidden !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list-container {
     flex: 1 !important;
     min-height: 0 !important;
-    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
-    height: auto !important;
+    height: 100% !important;
+    max-height: none !important;
 }
 
-:host ::ng-deep .filter-list .p-listbox .p-scroller {
+:host ::ng-deep .filter-list .p-listbox .p-scroller,
+:host ::ng-deep .filter-list .p-listbox p-scroller,
+:host ::ng-deep .filter-list .p-listbox .p-virtualscroller,
+:host ::ng-deep .filter-list .p-listbox p-virtualscroller {
     flex: 1 !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
 }
 
-:host ::ng-deep .filter-list .p-listbox .p-scroller-viewport {
+:host ::ng-deep .filter-list .p-listbox .p-scroller-viewport,
+:host ::ng-deep .filter-list .p-listbox p-scroller .p-scroller-viewport,
+:host ::ng-deep .filter-list .p-listbox .p-virtualscroller-viewport,
+:host ::ng-deep .filter-list .p-listbox p-virtualscroller .p-virtualscroller-viewport {
     flex: 1 !important;
     min-height: 0 !important;
-    height: auto !important;
-    overflow: hidden !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-scroller-content {
-    overflow-y: auto !important;
-    min-height: 0 !important;
+    min-height: 100% !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list {
     max-height: none !important;
     min-height: 0 !important;
+    width: 100% !important;
 }
 
 :host ::ng-deep .filter-list .p-listbox .p-listbox-list-wrapper {
@@ -137,6 +191,7 @@
     flex: 1 !important;
     min-height: 0 !important;
     height: auto !important;
+    width: 100% !important;
 }
 
 .filter-container input[type="checkbox"]{
@@ -158,6 +213,12 @@
     flex-direction: column;
 }
 
+.route-list .p-scroller {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 :host ::ng-deep .route-list .p-orderlist {
     height: 100% !important;
     display: flex !important;
@@ -166,21 +227,26 @@
 
 :host ::ng-deep .route-list .p-orderlist .p-orderlist-list-container {
     flex: 1 !important;
-    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    height: 100% !important;
+    max-height: none !important;
 }
 
 :host ::ng-deep .route-list .p-orderlist .p-scroller-viewport {
     flex: 1 !important;
+    height: 100% !important;
 }
 
 :host ::ng-deep .route-list .p-orderlist .p-scroller-content {
-    overflow-y: auto !important;
+    min-height: 100% !important;
 }
 
 :host ::ng-deep .route-list .p-orderlist .p-orderlist-list {
     max-height: none !important;
+}
+
+:host ::ng-deep .route-list .p-orderlist .p-scroller {
 }
 
 :host ::ng-deep .route-list .p-orderlist .p-orderlist-controls {
@@ -196,21 +262,19 @@
 :host ::ng-deep .route-list .p-listbox .p-listbox-list-container {
     max-height: none !important;
     flex: 1 !important;
-    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    height: 100% !important;
 }
 
 :host ::ng-deep .route-list .p-listbox .p-listbox-list {
     max-height: none !important;
     flex: 1 !important;
-    overflow-y: auto !important;
 }
 
 :host ::ng-deep .route-list .p-listbox .p-listbox-list-wrapper {
     max-height: none !important;
     flex: 1 !important;
-    overflow-y: auto !important;
 }
 
 .route-list--item {
@@ -498,8 +562,6 @@ textarea.inline-editor{
 
 .map-data-name {
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .map-data-types {

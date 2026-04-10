@@ -3,6 +3,7 @@ export class MapData {
     name!: string;
     oldNames!: string;
     data?: MapDataPoint[];
+    dataTypesTitle?: string;
 }
 
 export class MapDataPoint {

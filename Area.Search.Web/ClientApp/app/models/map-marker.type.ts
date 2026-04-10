@@ -3,6 +3,9 @@ export interface IAnnotationData {
 }
 
 export class MapMarker {
+    private _content: any = null;
+    private _contentPromise: Promise<any> | null = null;
+
     constructor(public location: Array<number>, public config: any) {
     }
     
@@ -11,7 +14,43 @@ export class MapMarker {
     }
     
     get options(): any {
-        return this.config;
+        return {
+            title: this.config?.title || 'Marker',
+            gmpDraggable: false,
+        };
+    }
+
+    get content(): any {
+        return this._content;
+    }
+
+    async ensureContent(): Promise<any> {
+        if (this._content) {
+            return this._content;
+        }
+
+        if (this._contentPromise) {
+            return this._contentPromise;
+        }
+
+        this._contentPromise = (async () => {
+            const { PinElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+            
+            const pinElement = new PinElement({
+                background: '#17a2b8',
+                glyphColor: 'white',
+                scale: 1,
+            });
+            
+            this._content = pinElement;
+            return this._content;
+        })();
+
+        return this._contentPromise;
+    }
+
+    async setContent(): Promise<void> {
+        await this.ensureContent();
     }
     
     originalMarker?: any;

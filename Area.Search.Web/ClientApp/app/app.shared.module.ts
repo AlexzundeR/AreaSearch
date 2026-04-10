@@ -33,7 +33,7 @@ export function loadGoogleMaps() {
                 resolve();
             } else {
                 const script = document.createElement('script');
-                script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y&libraries=drawing';
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDOnmIpJ7OEmDsEZ8KoFeB-t53MsAmva8Y';
                 script.onload = () => resolve();
                 document.head.appendChild(script);
             }
