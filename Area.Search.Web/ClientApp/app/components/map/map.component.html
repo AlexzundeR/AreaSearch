@@ -154,16 +154,19 @@
                                 [dragdrop]="!isMobile()"
                                 [controlsPosition]="'right'"
                                 [selection]="selectedPoint ? [selectedPoint] : []"
+                                [attr.tabindex]="-1"
                                 (onReorder)="onRouteReorder()">
                                 <ng-template let-item pTemplate="item" let-i="index">
-                                    <div class="route-list--item" [class.selected]="selectedPoint?.pointId === item.pointId" (click)="selectPoint(item)">
+                                    <div class="route-list--item" [class.selected]="selectedPoint?.pointId === item.pointId" (click)="selectPoint(item)" (mousedown)="$event.stopPropagation()">
                                         <div class="route-item-fields">
                                             <input type="text"
+                                                   tabindex="0"
                                                    style="overflow-wrap: anywhere; white-space: normal; height: 30px"
-                                                   [ngModel]="item.name"
+                                                   [value]="item.name"
                                                    (input)="onInputEvent($event, item)"
+                                                   (focus)="onInputFocus($event)"
+                                                   (keydown)="onInputKeydown($event)"
                                                    (blur)="onPointFieldBlur(item)"
-                                                   (keypress)="onKeyPress($event)"
                                                    class="inline-editor"
                                                    [readonly]="selectedPoint?.pointId !== item.pointId"
                                                    placeholder="Введите название точки"
@@ -171,10 +174,13 @@
                                                    autocorrect="off"
                                                    autocapitalize="off"/>
                                             <textarea
+                                                    tabindex="0"
                                                     rows="3"
                                                     style="overflow-wrap: anywhere; white-space: normal; height: 50px"
-                                                    [ngModel]="item.description"
+                                                    [value]="item.description"
                                                     (input)="onDescriptionInputEvent($event, item)"
+                                                    (focus)="onDescriptionFocus($event)"
+                                                    (keydown)="onInputKeydown($event)"
                                                     (blur)="onPointFieldBlur(item)"
                                                     class="inline-editor"
                                                     [readonly]="selectedPoint?.pointId !== item.pointId"

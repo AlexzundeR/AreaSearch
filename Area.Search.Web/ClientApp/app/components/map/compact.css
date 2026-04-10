@@ -106,25 +106,25 @@
 }
 
 .p-listbox-option {
-    height: 100% !important;
-    min-height: 50px !important;
+    height: 100%;
+    min-height: 50px;
 }
 
 .p-listbox-option.cdk-drag-disabled {
-    height: 100% !important;
-    min-height: 50px !important;
+    height: 100%;
+    min-height: 50px;
 }
 
 /* Компактный orderlist */
 .p-orderlist .p-orderlist-list {
-    padding: 0.125rem !important;
+    padding: 0.125rem;
 }
 
 .p-orderlist .p-orderlist-item {
-    padding: 0.375rem 0.5rem !important;
-    font-size: 13px !important;
-    height: 100% !important;
-    min-height: 50px !important;
+    padding: 0.375rem 0.5rem;
+    font-size: 13px;
+    height: 100%;
+    min-height: 50px;
 }
 
 .p-orderlist .p-orderlist-controls {

@@ -850,33 +850,35 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     pointNameChanged(newValue: string, point: RoutePoint) {
-        console.log('pointNameChanged:', newValue, 'current:', point.name);
         if (point.name === newValue) {
             return;
         }
         point._pendingName = newValue;
     }
 
-    onKeyPress(event: KeyboardEvent) {
-        console.log('KeyPress:', event.key, 'code:', event.code);
-    }
-
     onInputEvent(event: Event, point: RoutePoint) {
         const target = event.target as HTMLInputElement;
-        console.log('Input event:', target.value);
         point._pendingName = target.value;
-        point.name = target.value;
+    }
+
+    onInputFocus(event: FocusEvent) {
+        (event.target as HTMLInputElement).select();
+    }
+
+    onDescriptionFocus(event: FocusEvent) {
+        (event.target as HTMLTextAreaElement).select();
+    }
+
+    onInputKeydown(event: KeyboardEvent) {
+        event.stopPropagation();
     }
 
     onDescriptionInputEvent(event: Event, point: RoutePoint) {
         const target = event.target as HTMLTextAreaElement;
-        console.log('Description Input event:', target.value);
         point._pendingDescription = target.value;
-        point.description = target.value;
     }
 
     pointDescriptionChanged(newValue: string, point: RoutePoint) {
-        console.log('pointDescriptionChanged:', newValue, 'current:', point.description);
         if (point.description === newValue) {
             return;
         }
