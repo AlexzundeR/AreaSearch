@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "strict": true,
     "lib": ["ES2022", "dom"],
-    "types": ["google.maps", "node"],
+    "types": ["google.maps", "node", "playwright"],
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
