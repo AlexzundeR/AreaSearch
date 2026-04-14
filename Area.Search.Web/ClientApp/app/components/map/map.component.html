@@ -87,7 +87,7 @@
                                     [style]="{'width':'100%'}">
                                 </p-multiSelect>
 
-                                <div>
+                                <div style="margin-top:5px;">
                                     <div class="inline-checkbox">
                                         <p-checkbox [(ngModel)]="useMapBounds" 
                                                     (ngModelChange)="onUseMapBoundsChanged()" 
@@ -110,8 +110,7 @@
                                         <label for="showCurrentPosition">Показывать где я</label>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
-                                    <span style="font-size: 12px;">Сортировка:</span>
+                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px; flex-wrap: wrap;">
                                     <p-button [label]="sortBy === 'name' ? ('По имени ' + (sortDirection === 'asc' ? '↑' : '↓')) : 'По имени'" 
                                               (onClick)="onSortByChanged('name')" 
                                               styleClass="p-button-sm p-button-text"

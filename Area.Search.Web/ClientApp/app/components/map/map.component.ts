@@ -327,6 +327,7 @@ searchPatterns: { label: string; desc: string }[] = [
         }
         this.redrawRoute();
         this.updateDataSource();
+        this.applyFilters();
         
         if (this.showReferencePoint) {
             setTimeout(() => this.ensureReferenceMarker(), 500);
@@ -1178,6 +1179,7 @@ searchPatterns: { label: string; desc: string }[] = [
                 this.filterPanelCollapsed = false;
                 this.filterColumnWidth = state.width > 0 ? state.width : 500;
             }
+            this.onSearchClick();
         } else {
             this.filterPanelCollapsed = true;
             this.filterColumnWidth = 0;
