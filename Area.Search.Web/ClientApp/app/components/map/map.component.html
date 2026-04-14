@@ -137,7 +137,7 @@
 
                             <div class="filter-list">
                                 <div class="listbox-header">
-                                    <b>Найдено: {{totalResultsCount > MAX_DISPLAY_ITEMS ? '> ' + MAX_DISPLAY_ITEMS + ' (' + totalResultsCount + ')' : mapData?.length || 0}}</b>
+                                    <b>Найдено: {{totalResultsCount > MAX_DISPLAY_ITEMS ? '> ' + MAX_DISPLAY_ITEMS : mapData?.length || 0}}</b>
                                 </div>
                                 <p-listbox [options]="mapData" 
                                            [(ngModel)]="selectedMapData"

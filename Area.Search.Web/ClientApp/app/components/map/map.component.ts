@@ -333,7 +333,6 @@ searchPatterns: { label: string; desc: string }[] = [
             }
         }
         this.redrawRoute();
-        this.updateDataSource();
         this.applyFilters();
 
         if (this.showReferencePoint) {
@@ -366,6 +365,7 @@ searchPatterns: { label: string; desc: string }[] = [
     }
 
     private applyFilters(data?: MapData[]) {
+        this.mapDataSource = this.mapData;
         const sourceData = data || this.mapDataSource;
         if (!sourceData.length) return;
         
@@ -659,21 +659,21 @@ searchPatterns: { label: string; desc: string }[] = [
         this.routeDrawingService.setMap(mapInstance);
         this.map.addListener('bounds_changed', this.mapChanged);
 
-        // Initialize TerraDraw after a delay to ensure map is fully rendered
+        const hasSearchCriteria = this.searchString || 
+            (this.selectedTypes && this.selectedTypes.length > 0) || 
+            (this.ignoredTypes && this.ignoredTypes.length > 0) ||
+            this.useMapPolygon;
+
         setTimeout(() => {
-            this.initTerraDraw();
+            const terraDrawReady = this.initTerraDraw();
             
-            const hasSearchCriteria = this.searchString || 
-                (this.selectedTypes && this.selectedTypes.length > 0) || 
-                (this.ignoredTypes && this.ignoredTypes.length > 0) ||
-                this.useMapPolygon;
-            
-            if (this.initialPolygonPoints && this.initialPolygonPoints.length) {
+            if (this.initialPolygonPoints && this.initialPolygonPoints.length && terraDrawReady) {
                 setTimeout(() => {
                     this.renderPolygonToTerraDraw(this.initialPolygonPoints);
-                    this.onSearchClick();
                 }, 300);
-            } else if (hasSearchCriteria) {
+            }
+
+            if (hasSearchCriteria) {
                 this.onSearchClick();
             }
 
@@ -930,7 +930,6 @@ searchPatterns: { label: string; desc: string }[] = [
                     });
                 }
                 
-                this.updateDataSource();
                 this.applyFilters();
                 this.listIndicateLoading(false);
 
@@ -952,10 +951,6 @@ searchPatterns: { label: string; desc: string }[] = [
                 
                 this.cdr.detectChanges();
             });
-    }
-
-    updateDataSource() {
-        this.mapDataSource = this.mapData;
     }
 
     updateState() {
@@ -1188,6 +1183,10 @@ searchPatterns: { label: string; desc: string }[] = [
                 this.filterPanelCollapsed = false;
                 this.filterColumnWidth = state.width > 0 ? state.width : 500;
             }
+            setTimeout(() => {
+                this.cdr.detectChanges();
+                this.applyFilters();
+            }, 300);
         } else {
             this.filterPanelCollapsed = true;
             this.filterColumnWidth = 0;
