@@ -44,14 +44,29 @@
                         <div style="height: 100%; display: flex; flex-direction: column;">
                             <div class="filter-controls" style="margin-top: 5px; flex: 0 0 auto;">
                                 <span *ngIf="!(mapService.dataLoaded$ | async)" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
-                                
-                                <input type="text" 
-                                       pInputText 
-                                       [(ngModel)]="searchString" 
-                                       (ngModelChange)="onSearchStringChanged($event)"
-                                       placeholder="Запрос по названию"
-                                       style="width: 100%" />
-                                
+                                <div style="position: relative;">
+                                    <input type="text" 
+                                           pInputText 
+                                           [(ngModel)]="searchString" 
+                                           (ngModelChange)="onSearchStringChanged($event)"
+                                           (focus)="onSearchInputFocus()"
+                                           (blur)="onSearchInputBlur()"
+                                           (mousedown)="$event.stopPropagation()"
+                                           placeholder="Запрос по названию (regex)"
+                                           style="width: 100%" />
+                                    <div *ngIf="searchShowDropdown" 
+                                         style="position: absolute; top: 100%; left: 0; z-index: 1000; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; width: 100%;">
+                                        <div *ngFor="let pattern of searchPatterns" 
+                                             (mousedown)="$event.preventDefault(); selectSearchPattern(pattern)"
+                                             style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;"
+                                             onmouseover="this.style.backgroundColor='#f5f5f5'"
+                                             onmouseout="this.style.backgroundColor='white'">
+                                            <div style="font-weight: bold; font-size: 12px;">{{pattern.desc}}</div>
+                                            <div style="font-size: 10px; color: #666; font-family: monospace;">{{pattern.label}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                 
                                 <p-multiSelect 
                                     [options]="allTypes"
                                     [(ngModel)]="selectedTypes"
@@ -63,7 +78,7 @@
                                 </p-multiSelect>
                                 
                                 <p-multiSelect 
-                                    [options]="allTypes"
+                                    [options]="allTypesOrig"
                                     [(ngModel)]="ignoredTypes"
                                     placeholder="Игнорировать типы"
                                     [showClear]="true"
@@ -71,32 +86,53 @@
                                     (ngModelChange)="ignoredTypeSelectionChanged()"
                                     [style]="{'width':'100%'}">
                                 </p-multiSelect>
-                                
-                                <div class="inline-checkbox">
-                                    <p-checkbox [(ngModel)]="useMapBounds" 
-                                               (ngModelChange)="onUseMapBoundsChanged()" 
-                                               [binary]="true"
-                                               inputId="useMapBounds"></p-checkbox>
-                                    <label for="useMapBounds">Учитывать границы карты</label>
+
+                                <div>
+                                    <div class="inline-checkbox">
+                                        <p-checkbox [(ngModel)]="useMapBounds" 
+                                                    (ngModelChange)="onUseMapBoundsChanged()" 
+                                                    [binary]="true"
+                                                    inputId="useMapBounds"></p-checkbox>
+                                        <label for="useMapBounds">Учитывать границы карты</label>
+                                    </div>
+                                    <div class="inline-checkbox">
+                                        <p-checkbox [(ngModel)]="useMapPolygon" 
+                                                    (ngModelChange)="onUseMapPolygonChanged()" 
+                                                    [binary]="true"
+                                                    inputId="useMapPolygon"></p-checkbox>
+                                        <label for="useMapPolygon">Учитывать фигуру</label>
+                                    </div>
+                                    <div class="inline-checkbox">
+                                        <p-checkbox [(ngModel)]="showCurrentPosition" 
+                                                    (ngModelChange)="onShowCurrentPositionChanged()" 
+                                                    [binary]="true"
+                                                    inputId="showCurrentPosition"></p-checkbox>
+                                        <label for="showCurrentPosition">Показывать где я</label>
+                                    </div>
                                 </div>
-                                <div class="inline-checkbox">
-                                    <p-checkbox [(ngModel)]="useMapPolygon" 
-                                               (ngModelChange)="onUseMapPolygonChanged()" 
-                                               [binary]="true"
-                                               inputId="useMapPolygon"></p-checkbox>
-                                    <label for="useMapPolygon">Учитывать фигуру</label>
+                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                                    <span style="font-size: 12px;">Сортировка:</span>
+                                    <p-button [label]="sortBy === 'name' ? ('По имени ' + (sortDirection === 'asc' ? '↑' : '↓')) : 'По имени'" 
+                                              (onClick)="onSortByChanged('name')" 
+                                              styleClass="p-button-sm p-button-text"
+                                              [style.font-size]="sortBy === 'name' ? '12px' : '11px'"></p-button>
+                                    <p-button [label]="sortBy === 'distance' ? ('По расстоянию ' + (sortDirection === 'asc' ? '↑' : '↓')) : 'По расстоянию'" 
+                                              (onClick)="onSortByChanged('distance')" 
+                                              styleClass="p-button-sm p-button-text"
+                                              [style.font-size]="sortBy === 'distance' ? '12px' : '11px'"></p-button>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: -2px;">
+                                        <p-checkbox [(ngModel)]="showReferencePoint" 
+                                                (ngModelChange)="onShowReferencePointChanged()" 
+                                                [binary]="true"
+                                                inputId="showReferencePoint"></p-checkbox>
+                                        <label for="showReferencePoint" style="font-size: 12px;">Точка отсчёта</label>
+                                    </div>
                                 </div>
-                                <div class="inline-checkbox">
-                                    <p-checkbox [(ngModel)]="showCurrentPosition" 
-                                               (ngModelChange)="onShowCurrentPositionChanged()" 
-                                               [binary]="true"
-                                               inputId="showCurrentPosition"></p-checkbox>
-                                    <label for="showCurrentPosition">Показывать где я</label>
-                                </div>
-                                
+
                                 <div style="margin-top: 5px;">
                                     <button pButton type="button" (click)="onSearchClick()" label="Найти" class="p-button-sm"></button>
                                     <button pButton type="button" (click)="onShowOnMapClick()" label="Показать на карте" class="p-button-sm p-button-outlined"></button>
+                                    <button pButton type="button" (click)="copyNames()" label="Копировать" class="p-button-sm p-button-success" icon="pi pi-copy"></button>
                                 </div>
                             </div>
 
@@ -111,13 +147,20 @@
                                            [checkbox]="true"
                                            [filter]="false"
                                            [virtualScroll]="true"
-                                           [virtualScrollItemSize]="58"
+                                           [virtualScrollItemSize]="75"
                                            [style]="{'width': '100%', 'height': '100%'}">
                                     <ng-template let-item pTemplate="item">
                                         <div class="map-data-item">
                                             <div class="map-data-name" [title]="item.name">{{item.name}}</div>
+                                            <div class="map-data-distance"  style="font-size: 10px; color: #2196F3;">
+                                                {{getDistanceToReference(item)}}
+                                            </div>
                                             <div class="map-data-types" [title]="item.dataTypesTitle">
-                                                <span *ngFor="let mapPoints of item.data" class="badge badge-info" [title]="mapPoints.type">{{mapPoints.type}}</span>
+                                                <span *ngFor="let mapPoints of item.data" 
+                                                      class="badge badge-info" 
+                                                      [title]="mapPoints.type"
+                                                      (dblclick)="onBadgeDoubleClick(mapPoints.type)"
+                                                      style="cursor: pointer;">{{mapPoints.type}}</span>
                                             </div>
                                         </div>
                                     </ng-template>

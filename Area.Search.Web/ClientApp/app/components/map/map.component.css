@@ -263,7 +263,8 @@
     display: none;
 }
 
-:host ::ng-deep .route-list .p-listbox {
+:host ::ng-deep .route-list .p-listbox,
+:host ::ng-deep .filter-list .p-listbox {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -574,6 +575,10 @@ textarea.inline-editor{
     white-space: nowrap;
 }
 
+.map-data-distance {
+    flex: 0 0 auto;
+}
+
 .map-data-types {
     display: flex;
     flex-wrap: wrap;
@@ -581,6 +586,10 @@ textarea.inline-editor{
 
 .map-data-types .badge {
     margin: 0;
+}
+
+.map-data-types .badge:hover {
+    background-color: #0056b3;
 }
 
 .filter-column .collapse-toggle {
@@ -626,8 +635,14 @@ textarea.inline-editor{
                 0 3px 14px 2px rgba(0, 0, 0, 0.12);
     max-width: 100%;
     height: 58px;
+    outline: none !important;
 }
 
 :host ::ng-deep .cdk-drag-placeholder {
     opacity: 0.3;
+    outline: none !important;
+}
+
+:host ::ng-deep .cdk-drag * {
+    outline: none !important;
 }

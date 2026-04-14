@@ -10,6 +10,7 @@ import Aura from '@primeuix/themes/aura';
 
 import { TabsModule } from 'primeng/tabs';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { SelectModule } from 'primeng/select';
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 import { TableModule } from 'primeng/table';
@@ -57,6 +58,7 @@ export function loadGoogleMaps() {
         ]),
         TabsModule,
         MultiSelectModule,
+        SelectModule,
         ListboxModule,
         OrderListModule,
         TableModule,

@@ -16,8 +16,12 @@ export class MapMarker {
     get options(): any {
         return {
             title: this.config?.title || 'Marker',
-            gmpDraggable: false,
+            gmpDraggable: this.config?.draggable || false,
         };
+    }
+
+    get backgroundColor(): string {
+        return this.config?.color || '#17a2b8';
     }
 
     get content(): any {
@@ -37,7 +41,7 @@ export class MapMarker {
             const { PinElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
             
             const pinElement = new PinElement({
-                background: '#17a2b8',
+                background: this.backgroundColor,
                 glyphColor: 'white',
                 scale: 1,
             });

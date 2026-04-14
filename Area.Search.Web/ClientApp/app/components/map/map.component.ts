@@ -25,10 +25,31 @@ export class MapComponent implements OnChanges, AfterViewInit {
     totalResultsCount: number = 0;
     readonly MAX_DISPLAY_ITEMS = 1000;
     allTypes: string[] = [];
+    allTypesOrig: string[] = [];
     @Input() searchString: string = "";
     selectedTypes: string[] = [];
     ignoredTypes: string[] = [];
     mapMarkers: MapMarker[] = [];
+    
+    referenceMarker: MapMarker | null = null;
+    showReferencePoint: boolean = true;
+    referencePointLat: number = 55.7558;
+    referencePointLng: number = 37.6173;
+    sortBy: 'name' | 'distance' = 'name';
+    sortDirection: 'asc' | 'desc' = 'asc';
+    searchShowDropdown: boolean = false;
+searchPatterns: { label: string; desc: string }[] = [
+        { label: '.*улица.*', desc: 'Улица' },
+        { label: '.*переулок.*', desc: 'Переулок' },
+        { label: '.*проспект.*', desc: 'Проспект' },
+        { label: '^\\d.*', desc: 'Начинается с цифры' },
+        { label: '.*\\d.*', desc: 'Содержит цифру' },
+        { label: '^(ул|пер|прос|пл)', desc: 'Начинается с ул/пер/прос/пл' },
+        { label: '^(Ул|Per|прос|пл)', desc: 'Начинается с заглавной' },
+        { label: '^(?!.*,\\s*\\d+$)', desc: 'Не адрес' },
+        { label: '^(?!.*,\\s*\\d+$).*улица.*', desc: 'Улица и не адрес' },
+    ];
+    referenceMarkerElement: google.maps.marker.AdvancedMarkerElement | null = null;
 
     routeDataSource: Observable<RoutePoint[]>;
 
@@ -139,6 +160,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
         this.mapService.allTypesObs.subscribe((types) => {
             this.allTypes = types.sort();
+            this.allTypesOrig = types.sort();
         });
         
         this.mapService.dataLoaded$.subscribe((loaded) => {
@@ -287,13 +309,193 @@ export class MapComponent implements OnChanges, AfterViewInit {
             if (state.polygon) {
                 this.initialPolygonPoints = state.polygon;
             }
+            if (state.showReferencePoint != null) {
+                this.showReferencePoint = state.showReferencePoint;
+            }
+            if (state.referencePointLat != null) {
+                this.referencePointLat = state.referencePointLat;
+            }
+            if (state.referencePointLng != null) {
+                this.referencePointLng = state.referencePointLng;
+            }
+            if (state.sortBy) {
+                this.sortBy = state.sortBy;
+            }
+            if (state.sortDirection) {
+                this.sortDirection = state.sortDirection;
+            }
         }
         this.redrawRoute();
         this.updateDataSource();
+        
+        if (this.showReferencePoint) {
+            setTimeout(() => this.ensureReferenceMarker(), 500);
+        }
     }
 
     onSearchStringChanged(e: any) {
+        this.searchShowDropdown = false;
+    }
+
+    onSearchInputFocus() {
+        this.searchShowDropdown = true;
+    }
+
+    onSearchInputBlur() {
+        setTimeout(() =>{
+            this.searchShowDropdown = false;
+            this.cdr.detectChanges();
+        }, 200);
+    }
+
+    selectSearchPattern(pattern: { label: string; desc: string }) {
+        this.searchString = pattern.label;
+        this.searchShowDropdown = false;
+    }
+
+    hideSearchDropdown() {
+        this.searchShowDropdown = false;
+    }
+
+    private applyFilters(data?: MapData[]) {
+        const sourceData = data || this.mapDataSource;
+        if (!sourceData.length) return;
+        
+        let filteredData = sourceData.filter(item => {
+            if (this.searchString) {
+                try {
+                    const regex = new RegExp(this.searchString, 'i');
+                    if (!regex.test(item.name || '')) {
+                        return false;
+                    }
+                } catch {}
+            }
+            return true;
+        });
+        
+        const dir = this.sortDirection === 'asc' ? 1 : -1;
+        
+        if (this.sortBy === 'name') {
+            filteredData.sort((a, b) => dir * (a.name || '').localeCompare(b.name || ''));
+        } else if (this.sortBy === 'distance') {
+            const refPos = [this.referencePointLat || this.defaultCenter.lat, this.referencePointLng || this.defaultCenter.lng];
+            filteredData.sort((a, b) => {
+                const distA = this.getMinDistance(a, refPos);
+                const distB = this.getMinDistance(b, refPos);
+                return dir * (distA - distB);
+            });
+        }
+        
+        this.mapData = filteredData;
+        this.totalResultsCount = filteredData.length;
+        this.cdr.detectChanges();
+    }
+
+    onSortByChanged(sortBy: 'name' | 'distance') {
+        if (this.sortBy === sortBy) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = sortBy;
+            this.sortDirection = 'asc';
+        }
+        if (sortBy === 'distance') {
+            this.ensureReferenceMarker();
+        }
+        this.applyFilters();
         this.debouncedUpdateState();
+    }
+
+    private async ensureReferenceMarker() {
+        if (this.referenceMarkerElement) return;
+        
+        if (!this.map) {
+            await new Promise<void>(resolve => {
+                const checkMap = setInterval(() => {
+                    if (this.map) {
+                        clearInterval(checkMap);
+                        resolve();
+                    }
+                }, 100);
+                setTimeout(() => clearInterval(checkMap), 5000);
+            });
+            if (!this.map) return;
+        }
+        
+        const { PinElement } = await google.maps.importLibrary('marker') as google.maps.MarkerLibrary;
+        const pinElement = new PinElement({
+            background: '#0000FF',
+            glyphColor: 'white',
+            scale: 1,
+        });
+        
+        this.referenceMarkerElement = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat: this.referencePointLat, lng: this.referencePointLng },
+            map: this.map,
+            content: pinElement,
+            gmpDraggable: true,
+            title: 'Точка отсчёта',
+        });
+        
+        this.referenceMarker = new MapMarker([this.referencePointLat, this.referencePointLng], { text: 'Точка отсчёта', isReference: true, draggable: true, color: '#0000FF' });
+        
+        this.referenceMarkerElement.addListener('dragend', (event: any) => {
+            const pos = event.latLng;
+            this.referencePointLat = pos.lat();
+            this.referencePointLng = pos.lng();
+            this.referenceMarkerElement!.position = pos as any;
+            this.referenceMarker = new MapMarker([pos.lat(), pos.lng()], { text: 'Точка отсчёта', isReference: true, draggable: true, color: '#0000FF' });
+            this.applyFilters();
+            this.debouncedUpdateState();
+        });
+        
+        this.applyFilters();
+    }
+
+    onShowReferencePointChanged() {
+        if (this.showReferencePoint) {
+            this.ensureReferenceMarker();
+        } else if (this.referenceMarkerElement) {
+            this.referenceMarkerElement.map = null;
+            this.referenceMarkerElement = null;
+        }
+        this.cdr.detectChanges();
+        this.debouncedUpdateState();
+    }
+
+    getDistanceToReference(item: MapData): string {
+        const lat = this.referencePointLat || this.defaultCenter.lat;
+        const lng = this.referencePointLng || this.defaultCenter.lng;
+        const refPos = [lat, lng];
+        const dist = this.getMinDistance(item, refPos);
+        if (dist === Infinity) return '';
+        return dist < 1 ? `${Math.round(dist * 1000)} м` : `${dist.toFixed(1)} км`;
+    }
+
+    private getMinDistance(mapData: MapData, refPos: number[]): number {
+        if (!mapData.data) return Infinity;
+        let minDist = Infinity;
+        mapData.data.forEach(d => {
+            d.points?.forEach(p => {
+                const dist = this.calculateDistance(refPos[0], refPos[1], p[0], p[1]);
+                if (dist < minDist) minDist = dist;
+            });
+        });
+        return minDist;
+    }
+
+    private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+        const R = 6371;
+        const dLat = this.toRad(lat2 - lat1);
+        const dLon = this.toRad(lon2 - lon1);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    private toRad(deg: number): number {
+        return deg * Math.PI / 180;
     }
 
     typeSelectionChanged() {
@@ -302,6 +504,34 @@ export class MapComponent implements OnChanges, AfterViewInit {
 
     ignoredTypeSelectionChanged() {
         this.debouncedUpdateState();
+    }
+
+    copyNames() {
+        const itemsToCopy = this.selectedMapData && this.selectedMapData.length > 0 
+            ? this.selectedMapData 
+            : this.mapData;
+        
+        const names = itemsToCopy
+            .map(item => item.name)
+            .filter(name => name)
+            .join('\n');
+        
+        navigator.clipboard.writeText(names).then(() => {
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Скопировано',
+                detail: `Скопировано ${itemsToCopy.length} названий`,
+                life: 2000
+            });
+        });
+    }
+
+    onBadgeDoubleClick(type: string) {
+        this.ignoredTypes = this.ignoredTypes ? this.ignoredTypes : [];
+        if (!this.ignoredTypes.includes(type)) {
+            this.ignoredTypes = [...this.ignoredTypes, type];
+            this.ignoredTypeSelectionChanged();
+        }
     }
 
     onUseMapBoundsChanged() {
@@ -575,6 +805,22 @@ export class MapComponent implements OnChanges, AfterViewInit {
     }
 
     onGoogleMapClick(event: any) {
+        if (this.showReferencePoint) {
+            const lat = event.latLng.lat();
+            const lng = event.latLng.lng();
+            this.referencePointLat = lat;
+            this.referencePointLng = lng;
+            
+            if (this.referenceMarkerElement) {
+                this.referenceMarkerElement.position = { lat, lng } as any;
+            } else {
+                this.ensureReferenceMarker();
+            }
+            
+            this.referenceMarker = new MapMarker([lat, lng], { text: 'Точка отсчёта', isReference: true, draggable: true, color: '#0000FF' });
+            this.applyFilters();
+            this.debouncedUpdateState();
+        }
     }
 
     redrawPolygon(points?: google.maps.LatLng[]) {
@@ -675,6 +921,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
                 }
                 
                 this.updateDataSource();
+                this.applyFilters();
                 this.listIndicateLoading(false);
 
                 if (this.mapData) {
@@ -690,7 +937,7 @@ export class MapComponent implements OnChanges, AfterViewInit {
                     const oldIgnoredTypes = [...(this.ignoredTypes || [])];
                     this.allTypes = Array.from(newTypes).sort();
                     this.selectedTypes = oldSelectedTypes.filter(t => this.allTypes.includes(t));
-                    this.ignoredTypes = oldIgnoredTypes ? oldIgnoredTypes.filter(t => this.allTypes.includes(t)) : [];
+                    this.ignoredTypes = oldIgnoredTypes ? oldIgnoredTypes.filter(t => this.allTypesOrig.includes(t)) : [];
                 }
                 
                 this.cdr.detectChanges();
@@ -723,7 +970,12 @@ export class MapComponent implements OnChanges, AfterViewInit {
             useBoundaries: this.useMapBounds,
             selectedMapData: this.selectedMapData,
             usePolygon: this.useMapPolygon,
-            polygon: polygonCoords
+            polygon: polygonCoords,
+            showReferencePoint: this.showReferencePoint,
+            referencePointLat: this.referencePointLat,
+            referencePointLng: this.referencePointLng,
+            sortBy: this.sortBy,
+            sortDirection: this.sortDirection
         })
     }
 
