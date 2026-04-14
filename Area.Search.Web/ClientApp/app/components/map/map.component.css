@@ -79,7 +79,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    overflow: hidden;
+    overflow: auto;
     position: relative;
 }
 
@@ -106,7 +106,6 @@
 :host ::ng-deep .p-tabs .p-tabpanels {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -116,7 +115,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .filter-controls {
@@ -126,12 +124,31 @@
 
 .filter-list {
     flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    min-height: 600px;
     margin-top: 5px;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow: hidden;
+}
+
+.filter-list .listbox-header {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    text-align: right;
+    position: absolute;
+    right: 10px;
+    z-index: 1;
+}
+
+.filter-list .p-listbox {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.search-tab-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Completely disable keyboard navigation in orderlist list */
@@ -416,7 +433,6 @@
         z-index: 1000;
         background: white;
         transition: transform 0.3s ease;
-        overflow: hidden;
     }
 
     .filter-column.collapsed {
@@ -437,6 +453,11 @@
         top: 4px;
         right: 4px;
         z-index: 10;
+    }
+
+    .filter-controls {
+        flex: 0 0 auto;
+        padding-left: 4px;
     }
 }
 
@@ -470,7 +491,6 @@
         width: 500px;
         min-width: 150px;
         max-width: 800px;
-        overflow: hidden;
         position: relative;
     }
 

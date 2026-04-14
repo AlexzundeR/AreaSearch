@@ -41,7 +41,7 @@
                 </p-tablist>
                 <p-tabpanels>
                     <p-tabpanel [value]="0" [style]="{'height': '100%'}">
-                        <div style="height: 100%; display: flex; flex-direction: column;">
+                        <div class="search-tab-content">
                             <div class="filter-controls" style="margin-top: 5px; flex: 0 0 auto;">
                                 <span *ngIf="!(mapService.dataLoaded$ | async)" class="p-button-icon pi pi-spin pi-spinner" style="margin-left: 10px;"></span>
                                 <div style="position: relative;">
@@ -110,7 +110,7 @@
                                         <label for="showCurrentPosition">Показывать где я</label>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; margin-top: 5px; flex-wrap: wrap;">
                                     <p-button [label]="sortBy === 'name' ? ('По имени ' + (sortDirection === 'asc' ? '↑' : '↓')) : 'По имени'" 
                                               (onClick)="onSortByChanged('name')" 
                                               styleClass="p-button-sm p-button-text"
@@ -119,7 +119,7 @@
                                               (onClick)="onSortByChanged('distance')" 
                                               styleClass="p-button-sm p-button-text"
                                               [style.font-size]="sortBy === 'distance' ? '12px' : '11px'"></p-button>
-                                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: -2px;">
+                                    <div style="display: flex; align-items: center; margin-bottom: -2px;">
                                         <p-checkbox [(ngModel)]="showReferencePoint" 
                                                 (ngModelChange)="onShowReferencePointChanged()" 
                                                 [binary]="true"
@@ -135,10 +135,10 @@
                                 </div>
                             </div>
 
-                            <div class="filter-list" style="height: 100%;">
-                                <span style="margin-left: 10px; margin-right: 10px; position: absolute; right: 60px; margin-top: 12px;">
+                            <div class="filter-list">
+                                <div class="listbox-header">
                                     <b>Найдено: {{totalResultsCount > MAX_DISPLAY_ITEMS ? '> ' + MAX_DISPLAY_ITEMS + ' (' + totalResultsCount + ')' : mapData?.length || 0}}</b>
-                                </span>
+                                </div>
                                 <p-listbox [options]="mapData" 
                                            [(ngModel)]="selectedMapData"
                                            optionLabel="name"

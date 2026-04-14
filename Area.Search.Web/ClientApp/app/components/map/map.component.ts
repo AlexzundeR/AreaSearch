@@ -103,6 +103,13 @@ searchPatterns: { label: string; desc: string }[] = [
         }, 500);
     }
 
+    private debouncedSearch() {
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.onSearchClick();
+        }, 300);
+    }
+
     private renderPolygonToTerraDraw(coords: number[][]) {
         if (!this.terraDraw || !coords || coords.length < 3) return;
 
@@ -328,7 +335,7 @@ searchPatterns: { label: string; desc: string }[] = [
         this.redrawRoute();
         this.updateDataSource();
         this.applyFilters();
-        
+
         if (this.showReferencePoint) {
             setTimeout(() => this.ensureReferenceMarker(), 500);
         }
@@ -517,14 +524,37 @@ searchPatterns: { label: string; desc: string }[] = [
             .filter(name => name)
             .join('\n');
         
-        navigator.clipboard.writeText(names).then(() => {
+        const showSuccess = () => {
             this.messageService.add({
                 severity: 'success',
                 summary: 'Скопировано',
                 detail: `Скопировано ${itemsToCopy.length} названий`,
                 life: 2000
             });
-        });
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(names).then(showSuccess);
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = names;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showSuccess();
+            } catch (err) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Ошибка',
+                    detail: 'Не удалось скопировать',
+                    life: 3000
+                });
+            }
+            document.body.removeChild(textarea);
+        }
     }
 
     onBadgeDoubleClick(type: string) {
@@ -536,14 +566,12 @@ searchPatterns: { label: string; desc: string }[] = [
     }
 
     onUseMapBoundsChanged() {
-        this.onSearchClick();
         this.debouncedUpdateState();
     }
 
     onUseMapPolygonChanged() {
         this.refreshDrawingTools();
         this.redrawPolygon();
-        this.onSearchClick();
         this.debouncedUpdateState();
     }
 
@@ -806,22 +834,6 @@ searchPatterns: { label: string; desc: string }[] = [
     }
 
     onGoogleMapClick(event: any) {
-        if (this.showReferencePoint) {
-            const lat = event.latLng.lat();
-            const lng = event.latLng.lng();
-            this.referencePointLat = lat;
-            this.referencePointLng = lng;
-            
-            if (this.referenceMarkerElement) {
-                this.referenceMarkerElement.position = { lat, lng } as any;
-            } else {
-                this.ensureReferenceMarker();
-            }
-            
-            this.referenceMarker = new MapMarker([lat, lng], { text: 'Точка отсчёта', isReference: true, draggable: true, color: '#0000FF' });
-            this.applyFilters();
-            this.debouncedUpdateState();
-        }
     }
 
     redrawPolygon(points?: google.maps.LatLng[]) {
@@ -831,9 +843,6 @@ searchPatterns: { label: string; desc: string }[] = [
         this.mapCenter = (this.map as google.maps.Map).getCenter();
         this.mapZoom = (this.map as google.maps.Map).getZoom();
         this.debouncedUpdateState();
-        if (this.useMapBounds && !this.useMapPolygon) {
-            this.onSearchClick();
-        }
     }
 
     selectedMapDataChanged(e: any) {
@@ -909,8 +918,8 @@ searchPatterns: { label: string; desc: string }[] = [
         this.mapService.mapDataQuery(this.searchString, this.selectedTypes, this.ignoredTypes, mapBounds, filterigCallback)
             .then((data) => {
                 this.totalResultsCount = data.length;
-                this.mapData = data.length > this.MAX_DISPLAY_ITEMS 
-                    ? data.slice(0, this.MAX_DISPLAY_ITEMS) 
+                this.mapData = data.length > this.MAX_DISPLAY_ITEMS + 1 
+                    ? data.slice(0, this.MAX_DISPLAY_ITEMS + 1) 
                     : data;
                 
                 if (this.mapData) {
@@ -1179,7 +1188,6 @@ searchPatterns: { label: string; desc: string }[] = [
                 this.filterPanelCollapsed = false;
                 this.filterColumnWidth = state.width > 0 ? state.width : 500;
             }
-            this.onSearchClick();
         } else {
             this.filterPanelCollapsed = true;
             this.filterColumnWidth = 0;
