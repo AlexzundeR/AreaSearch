@@ -9,12 +9,21 @@
     <style>
         html, body {
             height: 100vh;
+            @* min-height: 100vh; *@
             margin: 0;
             padding: 0;
             overflow: auto;
             -webkit-overflow-scrolling: touch;
         }
     </style>
+    @* <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.scrollTo(0, 1);
+                document.body.style.setProperty('height', (window.innerHeight + 10) + 'px');
+            }, 300);
+        });
+    </script> *@
 
     <link rel="stylesheet" href="@AssetHelper.GetHashedAssetPath("dist/styles.css")" />
 </head>

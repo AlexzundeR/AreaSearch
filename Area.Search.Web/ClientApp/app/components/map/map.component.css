@@ -1,12 +1,18 @@
 .map-page-container {
     display: flex;
     height: 100%;
+    min-height: 100%;
     width: 100%;
     position: relative;
 }
 
 @media (min-width: 769px) {
-    .map-page-container {
+    .route-list .p-orderlist .p-orderlist-list-container {
+        overflow-y: auto;
+    }
+
+    :host ::ng-deep .route-list .p-orderlist .p-listbox-option {
+        max-height: 120px;
         overflow: hidden;
     }
 }
@@ -328,6 +334,8 @@
     pointer-events: auto;
     flex: 1;
     align-items: flex-start;
+    max-height: 120px;
+    overflow: hidden;
 }
 
 .route-list--item .route-item-fields {
@@ -335,6 +343,8 @@
     flex-direction: column;
     gap: 4px;
     flex: 1;
+    max-height: 120px;
+    overflow: hidden;
 }
 
 .route-list-controls {
@@ -371,6 +381,9 @@
     pointer-events: auto;
     cursor: text;
     width: 100%;
+    max-height: 120px;
+    overflow: hidden;
+    resize: none;
 }
 
 .route-list--item input:focus,

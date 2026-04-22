@@ -141,6 +141,24 @@ searchPatterns: { label: string; desc: string }[] = [
         this.updateCachedPolygon();
     }
 
+    get sortedSelectedTypes(): string[] {
+        const selected = this.selectedTypes || [];
+        return [...this.allTypes].sort((a, b) => {
+            const aSelected = selected.indexOf(a) >= 0 ? 0 : 1;
+            const bSelected = selected.indexOf(b) >= 0 ? 0 : 1;
+            return aSelected - bSelected;
+        });
+    }
+
+    get sortedIgnoredTypes(): string[] {
+        const selected = this.ignoredTypes || [];
+        return [...this.allTypesOrig].sort((a, b) => {
+            const aSelected = selected.indexOf(a) >= 0 ? 0 : 1;
+            const bSelected = selected.indexOf(b) >= 0 ? 0 : 1;
+            return aSelected - bSelected;
+        });
+    }
+
     // Google Maps options
     mapOptions: google.maps.MapOptions = {
         zoom: 10,
@@ -1023,6 +1041,13 @@ searchPatterns: { label: string; desc: string }[] = [
 
     onRouteReorder() {
         this.routeService.reorderPoints(this.routeService.route.points);
+    }
+
+    onRouteSelectionChange(event: any) {
+        if (event.value && event.value.length > 0) {
+            const newSelection = event.value[event.value.length - 1];
+            this.selectPoint(newSelection);
+        }
     }
 
     movePointUp(point: RoutePoint) {

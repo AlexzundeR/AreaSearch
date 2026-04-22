@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Route, RoutePoint } from "../models/route.type";
 import { Observable, BehaviorSubject, Subject as RxSubject, map, defer } from "rxjs";
-import { switchMap, catchError, takeUntil, tap, distinctUntilChanged } from "rxjs/operators";
+import { concatMap, catchError, takeUntil, tap } from "rxjs/operators";
 
 export class ServiceError {
     error!: string;
@@ -26,6 +26,8 @@ export class RouteService {
     private updateTriggerSub = new RxSubject<Route>();
     private stopUpdateSub = new RxSubject<void>();
     private savingSub = new BehaviorSubject<boolean>(false);
+    private pendingQueue: Route[] = [];
+    private isProcessing: boolean = false;
 
     public $saving: Observable<boolean> = this.savingSub.asObservable();
 
@@ -46,8 +48,12 @@ export class RouteService {
 
     private initUpdatePipeline() {
         this.updateTriggerSub.pipe(
-            tap(() => this.savingSub.next(true)),
-            switchMap(route => 
+            tap(() => {
+                if (!this.savingSub.value) {
+                    this.savingSub.next(true);
+                }
+            }),
+            concatMap(route => 
                 defer(() => this.http.post<Route>("/api/route", route)).pipe(
                     catchError((error: HttpErrorResponse) => {
                         this.handleError(error);
@@ -55,7 +61,6 @@ export class RouteService {
                     })
                 )
             ),
-            tap(() => this.savingSub.next(false)),
             takeUntil(this.stopUpdateSub)
         ).subscribe({
             next: (updatedRoute) => {
@@ -64,9 +69,39 @@ export class RouteService {
                     currentRoute.lastModificationDate = updatedRoute.lastModificationDate;
                     currentRoute.routeId = updatedRoute.routeId;
                     currentRoute.name = updatedRoute.name;
+                    this.updateQueueWithNewVersion(updatedRoute.lastModificationDate);
                 }
-            }
+                this.processNext();
+            },
+            error: () => this.processNext()
         });
+    }
+
+    private updateQueueWithNewVersion(newVersion: Date) {
+        this.pendingQueue = this.pendingQueue.map(route => ({
+            ...route,
+            lastModificationDate: newVersion
+        }));
+    }
+
+    private processNext() {
+        this.isProcessing = false;
+        if (this.pendingQueue.length > 0) {
+            const next = this.pendingQueue.shift();
+            if (next) {
+                this.isProcessing = true;
+                this.updateTriggerSub.next(next);
+            }
+        } else {
+            this.savingSub.next(false);
+        }
+    }
+
+    private queueUpdate(route: Route) {
+        this.pendingQueue.push(route);
+        if (!this.isProcessing) {
+            this.processNext();
+        }
     }
 
     private handleError(response: HttpErrorResponse) {
@@ -113,10 +148,6 @@ export class RouteService {
         currentRoute.points.push(newPoint);
         this.routeSub.next({ ...currentRoute, points: [...currentRoute.points] });
         this.queueUpdate(currentRoute);
-    }
-
-    private queueUpdate(route: Route) {
-        this.updateTriggerSub.next(route);
     }
 
     async getRoute(routeId: number): Promise<Route> {

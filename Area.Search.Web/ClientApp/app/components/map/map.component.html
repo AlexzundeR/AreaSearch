@@ -67,8 +67,8 @@
                                     </div>
                                 </div>
                                  
-                                <p-multiSelect 
-                                    [options]="allTypes"
+<p-multiSelect 
+                                    [options]="sortedSelectedTypes"
                                     [(ngModel)]="selectedTypes"
                                     placeholder="Нужные типы"
                                     [showClear]="true"
@@ -76,9 +76,9 @@
                                     (onChange)="typeSelectionChanged()"
                                     [style]="{'width':'100%'}">
                                 </p-multiSelect>
-                                
+
                                 <p-multiSelect 
-                                    [options]="allTypesOrig"
+                                    [options]="sortedIgnoredTypes"
                                     [(ngModel)]="ignoredTypes"
                                     placeholder="Игнорировать типы"
                                     [showClear]="true"
@@ -136,8 +136,8 @@
                             </div>
 
                             <div class="filter-list">
-                                <div class="listbox-header">
-                                    <b>Найдено: {{totalResultsCount > MAX_DISPLAY_ITEMS ? '> ' + MAX_DISPLAY_ITEMS : mapData?.length || 0}}</b>
+<div class="listbox-header">
+                                    <b> <span *ngIf="selectedMapData?.length" style="margin-left: 10px; color: #2196F3;">Выбрано: {{selectedMapData?.length}} | </span> Найдено: {{totalResultsCount > MAX_DISPLAY_ITEMS ? '> ' + MAX_DISPLAY_ITEMS : mapData?.length || 0}}</b>
                                 </div>
                                 <p-listbox [options]="mapData" 
                                            [(ngModel)]="selectedMapData"
@@ -185,19 +185,20 @@
                                      [disabled]="!hasRoutePoints()" 
                                      label="Яндекс" class="p-button-sm p-button-secondary" style="margin-left: 10px;"></button>
                         </div>
-                        <div class="route-list-controls" *ngIf="isMobile() && selectedPoint">
-                            <button pButton type="button" icon="pi pi-arrow-up" (click)="moveSelectedPointUp()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
-                            <button pButton type="button" icon="pi pi-arrow-down" (click)="moveSelectedPointDown()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
-                        </div>
-                        <div class="route-list">
-                            <p-orderList 
-                                [value]="(routeDataSource | async) || []"
-                                optionLabel="name"
-                                [dragdrop]="!isMobile()"
-                                [controlsPosition]="'right'"
-                                [selection]="selectedPoint ? [selectedPoint] : []"
-                                [attr.tabindex]="-1"
-                                (onReorder)="onRouteReorder()">
+<div class="route-list-controls" *ngIf="isMobile() && selectedPoint">
+                        <button pButton type="button" icon="pi pi-arrow-up" (click)="moveSelectedPointUp()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
+                        <button pButton type="button" icon="pi pi-arrow-down" (click)="moveSelectedPointDown()" [disabled]="!selectedPoint" class="p-button-sm p-button-text"></button>
+                    </div>
+                    <div class="route-list" [class.has-selected]="selectedPoint">
+                        <p-orderList 
+                            [value]="(routeDataSource | async) || []"
+                            optionLabel="name"
+                            [dragdrop]="!isMobile()"
+                            [controlsPosition]="'right'"
+                            [selection]="selectedPoint ? [selectedPoint] : []"
+                            [attr.tabindex]="-1"
+                            (onReorder)="onRouteReorder()"
+                            (onSelectionChange)="onRouteSelectionChange($event)">
                                 <ng-template let-item pTemplate="item" let-i="index">
                                     <div class="route-list--item" [class.selected]="selectedPoint?.pointId === item.pointId" (click)="selectPoint(item)" (mousedown)="$event.stopPropagation()">
                                         <div class="route-item-fields">
